@@ -237,7 +237,7 @@ export default function ExpensePage() {
                   <input
                     type="date"
                     className={r.date ? "" : "blank"}
-                    min={`${ym}-01`}
+                    min={`${prevMonth(ym)}-01`}
                     max={`${ym}-${String(lastDay(ym)).padStart(2, "0")}`}
                     value={r.date}
                     onChange={(e) => updateRow(i, { date: e.target.value })}
