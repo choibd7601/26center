@@ -137,3 +137,7 @@ button.small { padding: 2px 8px; font-size: 13px; }
 .chip button:disabled { visibility: hidden; }
 @media print { .table.expense td select { appearance: none; } }
 .table.expense th.cat { width: 160px; }
+.sync { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 4px; }
+.sync.ok { color: #15803d; }
+.sync.bad { color: #b45309; }
+.sync input.code { width: 110px; padding: 2px 6px; font-size: 13px; }

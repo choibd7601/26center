@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fmt, parseAmount } from "@/lib/bills";
+import { loadData, saveData, type SyncStatus } from "@/lib/store";
+import SyncBadge from "@/components/SyncBadge";
 
 type Row = { date: string; vendor: string; desc: string; amount: string; note: string; category: string };
 type Sheet = { periodStart: string; periodEnd: string; carryOver: string; rows: Row[] };
@@ -17,8 +19,6 @@ const CATEGORIES = [
   "복리후생비",
   "감가상각비",
 ];
-
-const CAT_KEY = "26center:categories";
 
 const emptyRow = (): Row => ({ date: "", vendor: "", desc: "", amount: "", note: "", category: "" });
 
@@ -38,16 +38,10 @@ function newSheet(ym: string): Sheet {
     rows: Array.from({ length: 20 }, emptyRow),
   };
 }
-const storeKey = (ym: string) => `26center:expense:${ym}`;
-function load(ym: string): Sheet | null {
-  try {
-    const v = localStorage.getItem(storeKey(ym));
-    if (!v) return null;
-    const sh = JSON.parse(v) as Sheet;
-    return { ...sh, rows: sh.rows.map((r) => ({ ...emptyRow(), ...r })) };
-  } catch {
-    return null;
-  }
+const sheetKey = (ym: string) => `expense:${ym}`;
+function normalize(sh: Sheet | null): Sheet | null {
+  if (!sh) return null;
+  return { ...sh, rows: sh.rows.map((r) => ({ ...emptyRow(), ...r })) };
 }
 function prevMonth(ym: string) {
   const [y, m] = ym.split("-").map(Number);
@@ -57,22 +51,21 @@ function prevMonth(ym: string) {
 export default function ExpensePage() {
   const [ym, setYm] = useState("");
   const [sheet, setSheet] = useState<Sheet | null>(null);
-  const [savedMsg, setSavedMsg] = useState("");
+  const [status, setStatus] = useState<SyncStatus>("loading");
+  const [loadedYm, setLoadedYm] = useState("");
+  const [reload, setReload] = useState(0);
+  const skipSave = useRef(true);
+  const retry = useCallback(() => setReload((n) => n + 1), []);
   const [cats, setCats] = useState<string[]>(CATEGORIES);
   const [showCats, setShowCats] = useState(false);
   const [newCat, setNewCat] = useState("");
 
   useEffect(() => {
-    try {
-      const v = localStorage.getItem(CAT_KEY);
-      if (v) setCats(JSON.parse(v) as string[]);
-    } catch {}
-  }, []);
+    loadData<string[]>("categories").then(({ value }) => value && setCats(value));
+  }, [reload]);
   const saveCats = (next: string[]) => {
     setCats(next);
-    try {
-      localStorage.setItem(CAT_KEY, JSON.stringify(next));
-    } catch {}
+    saveData("categories", next).then(setStatus);
   };
   const addCat = () => {
     const c = newCat.trim();
@@ -86,20 +79,37 @@ export default function ExpensePage() {
     setYm(k);
   }, []);
 
+  // 달이 바뀌면 서버에서 불러오기 (서버에 없고 이 브라우저에만 있으면 서버로 올림)
   useEffect(() => {
     if (!ym) return;
-    setSheet(load(ym) ?? newSheet(ym));
-  }, [ym]);
+    let alive = true;
+    setStatus("loading");
+    setLoadedYm("");
+    loadData<Sheet>(sheetKey(ym)).then(({ value, status, fromServer }) => {
+      if (!alive) return;
+      skipSave.current = fromServer || value == null;
+      setSheet(normalize(value) ?? newSheet(ym));
+      setLoadedYm(ym);
+      setStatus(status);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [ym, reload]);
 
+  // 고칠 때마다 0.8초 뒤 서버에 저장
   useEffect(() => {
-    if (!sheet || !ym) return;
-    try {
-      localStorage.setItem(storeKey(ym), JSON.stringify(sheet));
-      setSavedMsg("자동 저장됨");
-    } catch {
-      setSavedMsg("저장 실패 (브라우저 저장소를 쓸 수 없음)");
+    if (!sheet || !ym || loadedYm !== ym) return;
+    if (skipSave.current) {
+      skipSave.current = false;
+      return;
     }
-  }, [sheet, ym]);
+    setStatus("saving");
+    const t = setTimeout(() => {
+      saveData(sheetKey(ym), sheet).then(setStatus);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [sheet, ym, loadedYm]);
 
   const totals = useMemo(() => {
     if (!sheet) return { sum: 0, byCat: [] as [string, number, number][] };
@@ -138,10 +148,10 @@ export default function ExpensePage() {
     update({ rows });
   };
 
-  function copyPrev() {
-    const prev = load(prevMonth(ym));
+  async function copyPrev() {
+    const prev = normalize((await loadData<Sheet>(sheetKey(prevMonth(ym)))).value);
     if (!prev) {
-      alert("지난달 경비내역서가 이 브라우저에 없습니다.");
+      alert("지난달 경비내역서가 없습니다.");
       return;
     }
     if (!confirm("지난달 항목(내용·비고·부과항목)을 가져옵니다. 금액은 비워둡니다. 계속할까요?")) return;
@@ -205,7 +215,7 @@ export default function ExpensePage() {
         >
           초기화
         </button>
-        <span className="muted small">{savedMsg}</span>
+        <SyncBadge status={status} onRetry={retry} />
       </div>
 
       {showCats && (
@@ -413,7 +423,7 @@ export default function ExpensePage() {
         </table>
       </section>
       <p className="muted small no-print">
-        입력 내용은 이 컴퓨터의 브라우저에 자동 저장됩니다. 다른 컴퓨터에서 보려면 CSV로 저장해 옮겨주세요.
+        입력 내용은 서버에 자동 저장되어 다른 컴퓨터·휴대폰에서도 같은 내용이 보입니다. (서버 연결이 안 될 때는 이 브라우저에 임시 저장)
       </p>
     </>
   );

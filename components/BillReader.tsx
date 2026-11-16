@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { loadData, saveData, type SyncStatus } from "@/lib/store";
+import SyncBadge from "@/components/SyncBadge";
 import { BILL_FIELDS, fmt, parseAmount, type BillKind, type ReadResult } from "@/lib/bills";
 
 type Props = {
@@ -84,14 +86,23 @@ export default function BillReader({ kind, renderResult, historyRow }: Props) {
   const [needCode, setNeedCode] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
-  const histKey = `26center:history:${kind}`;
+  const histKey = `history:${kind}`;
+  const [histStatus, setHistStatus] = useState<SyncStatus>("loading");
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     setAccessCode(loadStore("26center:accessCode", ""));
-    setHistory(loadStore<HistoryItem[]>(histKey, []));
     const d = new Date();
     setMonth(`${d.getFullYear()}년 ${d.getMonth() + 1}월`);
-  }, [histKey]);
+  }, []);
+
+  useEffect(() => {
+    loadData<HistoryItem[]>(histKey).then(({ value, status, fromServer }) => {
+      setHistory(value ?? []);
+      setHistStatus(status);
+      if (status === "server" && !fromServer && value?.length) saveData(histKey, value).then(setHistStatus);
+    });
+  }, [histKey, reload]);
 
   const values = useMemo(() => {
     const v: Record<string, number | null> = {};
@@ -135,7 +146,7 @@ export default function BillReader({ kind, renderResult, historyRow }: Props) {
     const item: HistoryItem = { month, savedAt: new Date().toISOString(), values, row: historyRow(values) };
     const next = [item, ...history.filter((h) => h.month !== month)].slice(0, 36);
     setHistory(next);
-    saveStore(histKey, next);
+    saveData(histKey, next).then(setHistStatus);
   }
 
   const historyCols = history[0] ? Object.keys(history[0].row) : [];
@@ -301,7 +312,9 @@ export default function BillReader({ kind, renderResult, historyRow }: Props) {
 
       {history.length > 0 && (
         <section className="card">
-          <h2>저장된 기록 (이 브라우저)</h2>
+          <h2>
+            저장된 기록 <SyncBadge status={histStatus} onRetry={() => setReload((n) => n + 1)} />
+          </h2>
           <table className="table">
             <thead>
               <tr>
@@ -327,7 +340,7 @@ export default function BillReader({ kind, renderResult, historyRow }: Props) {
                       onClick={() => {
                         const next = history.filter((x) => x.month !== h.month);
                         setHistory(next);
-                        saveStore(histKey, next);
+                        saveData(histKey, next).then(setHistStatus);
                       }}
                     >
                       삭제
