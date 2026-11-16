@@ -27,15 +27,28 @@ function saveStore(key: string, v: unknown) {
   } catch {}
 }
 
+async function pdfToImageUrl(file: File) {
+  // 스캔 PDF 의 첫 페이지를 이미지로 바꿔서 위치 표시가 되게 한다
+  const pdfjs = await import("pdfjs-dist");
+  pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+  const doc = await pdfjs.getDocument({
+    data: new Uint8Array(await file.arrayBuffer()),
+    wasmUrl: "/pdfjs-wasm/",
+  }).promise;
+  const page = await doc.getPage(1);
+  const base = page.getViewport({ scale: 1 });
+  const viewport = page.getViewport({ scale: 2400 / Math.max(base.width, base.height) });
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(viewport.width);
+  canvas.height = Math.round(viewport.height);
+  await page.render({ canvas, viewport }).promise;
+  return canvas.toDataURL("image/png");
+}
+
 async function prepareFile(file: File) {
-  if (file.type === "application/pdf") {
-    const buf = new Uint8Array(await file.arrayBuffer());
-    let bin = "";
-    for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
-    return { mediaType: "application/pdf" as const, data: btoa(bin), previewUrl: null, width: 0, height: 0 };
-  }
+  const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
   // 이미지: 긴 변 2400px 로 줄여 JPEG 로 변환 (전송 용량 제한 대비)
-  const url = URL.createObjectURL(file);
+  const url = isPdf ? await pdfToImageUrl(file) : URL.createObjectURL(file);
   const img = await new Promise<HTMLImageElement>((res, rej) => {
     const i = new Image();
     i.onload = () => res(i);
@@ -52,7 +65,7 @@ async function prepareFile(file: File) {
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, w, h);
   ctx.drawImage(img, 0, 0, w, h);
-  URL.revokeObjectURL(url);
+  if (!isPdf) URL.revokeObjectURL(url);
   const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
   return { mediaType: "image/jpeg" as const, data: dataUrl.split(",")[1], previewUrl: dataUrl, width: w, height: h };
 }
@@ -270,7 +283,7 @@ export default function BillReader({ kind, renderResult, historyRow }: Props) {
               })}
             </div>
           ) : (
-            <p className="muted">이미지를 올리면 각 금액을 읽은 위치를 색깔 상자로 표시합니다. (PDF는 값만 읽습니다)</p>
+            <p className="muted">이미지를 올리면 각 금액을 읽은 위치를 색깔 상자로 표시합니다. (PDF는 첫 페이지를 읽습니다)</p>
           )}
         </section>
       </div>

@@ -5,11 +5,14 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "prebuild": "node scripts/copy-pdfjs.mjs",
+    "predev": "node scripts/copy-pdfjs.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",
     "next": "^16.4.6",
+    "pdfjs-dist": "^5.7.284",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
