@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { fmt, parseAmount } from "@/lib/bills";
 
-type Row = { desc: string; amount: string; note: string; category: string };
+type Row = { date: string; vendor: string; desc: string; amount: string; note: string; category: string };
 type Sheet = { periodStart: string; periodEnd: string; carryOver: string; rows: Row[] };
 
 const CATEGORIES = [
@@ -18,7 +18,7 @@ const CATEGORIES = [
   "감가상각비",
 ];
 
-const emptyRow = (): Row => ({ desc: "", amount: "", note: "", category: "" });
+const emptyRow = (): Row => ({ date: "", vendor: "", desc: "", amount: "", note: "", category: "" });
 
 function monthKey(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -40,7 +40,9 @@ const storeKey = (ym: string) => `26center:expense:${ym}`;
 function load(ym: string): Sheet | null {
   try {
     const v = localStorage.getItem(storeKey(ym));
-    return v ? (JSON.parse(v) as Sheet) : null;
+    if (!v) return null;
+    const sh = JSON.parse(v) as Sheet;
+    return { ...sh, rows: sh.rows.map((r) => ({ ...emptyRow(), ...r })) };
   } catch {
     return null;
   }
@@ -76,8 +78,9 @@ export default function ExpensePage() {
   }, [sheet, ym]);
 
   const totals = useMemo(() => {
-    if (!sheet) return { sum: 0, byCat: [] as [string, number][] };
+    if (!sheet) return { sum: 0, byCat: [] as [string, number, number][] };
     const map = new Map<string, number>();
+    const cnt = new Map<string, number>();
     let sum = 0;
     for (const r of sheet.rows) {
       const n = parseAmount(r.amount);
@@ -85,8 +88,13 @@ export default function ExpensePage() {
       sum += n;
       const c = r.category.trim() || "(미분류)";
       map.set(c, (map.get(c) ?? 0) + n);
+      cnt.set(c, (cnt.get(c) ?? 0) + 1);
     }
-    return { sum, byCat: [...map.entries()].sort((a, b) => b[1] - a[1]) };
+    const order = (c: string) => (CATEGORIES.indexOf(c) === -1 ? 999 : CATEGORIES.indexOf(c));
+    const byCat = [...map.entries()]
+      .sort((a, b) => order(a[0]) - order(b[0]) || a[0].localeCompare(b[0], "ko"))
+      .map(([c, n]) => [c, n, cnt.get(c) ?? 0] as [string, number, number]);
+    return { sum, byCat };
   }, [sheet]);
 
   if (!sheet) return null;
@@ -107,7 +115,7 @@ export default function ExpensePage() {
       return;
     }
     if (!confirm("지난달 항목(내용·비고·부과항목)을 가져옵니다. 금액은 비워둡니다. 계속할까요?")) return;
-    const rows = prev.rows.filter((r) => r.desc || r.category).map((r) => ({ ...r, amount: "" }));
+    const rows = prev.rows.filter((r) => r.desc || r.category).map((r) => ({ ...r, amount: "", date: "" }));
     update({ rows: [...rows, ...Array.from({ length: 5 }, emptyRow)] });
   }
 
@@ -115,15 +123,16 @@ export default function ExpensePage() {
     const esc = (s: string) => `"${s.replace(/"/g, '""')}"`;
     const lines = [
       [`${title} 경비내역서 [${sheet!.periodStart}~${sheet!.periodEnd}]`],
-      ["내용", "총금액", "비고", "관리비부과항목"],
-      ["전일(전월) 이월금액", String(parseAmount(sheet!.carryOver) ?? ""), "", ""],
+      ["일자", "사용처", "내용", "총금액", "비고", "관리비부과항목"],
+      ["", "", "전일(전월) 이월금액", String(parseAmount(sheet!.carryOver) ?? ""), "", ""],
       ...sheet!.rows
-        .filter((r) => r.desc || r.amount)
-        .map((r) => [r.desc, String(parseAmount(r.amount) ?? ""), r.note, r.category]),
-      ["합계", String(totals.sum), "", ""],
+        .filter((r) => r.desc || r.amount || r.vendor)
+        .map((r) => [r.date, r.vendor, r.desc, String(parseAmount(r.amount) ?? ""), r.note, r.category]),
+      ["", "", "합계", String(totals.sum), "", ""],
       [],
-      ["관리비부과항목별 합계"],
-      ...totals.byCat.map(([c, n]) => [c, String(n)]),
+      ["관리비부과항목", "건수", "금액"],
+      ...totals.byCat.map(([c, n, k]) => [c, String(k), String(n)]),
+      ["합계", "", String(totals.sum)],
     ];
     const csv = "﻿" + lines.map((l) => l.map(esc).join(",")).join("\r\n");
     const a = document.createElement("a");
@@ -143,6 +152,17 @@ export default function ExpensePage() {
         </button>
         <button className="ghost" onClick={() => update({ rows: [...sheet.rows, ...Array.from({ length: 5 }, emptyRow)] })}>
           행 5개 추가
+        </button>
+        <button
+          className="ghost"
+          onClick={() => {
+            const filled = sheet.rows.filter((r) => r.desc || r.amount || r.vendor || r.date);
+            const empty = sheet.rows.filter((r) => !(r.desc || r.amount || r.vendor || r.date));
+            filled.sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
+            update({ rows: [...filled, ...empty] });
+          }}
+        >
+          일자순 정렬
         </button>
         <button onClick={downloadCsv}>엑셀(CSV) 저장</button>
         <button onClick={() => window.print()}>인쇄</button>
@@ -182,7 +202,8 @@ export default function ExpensePage() {
         <table className="table expense">
           <thead>
             <tr>
-              <th className="no">No</th>
+              <th className="date">일 자</th>
+              <th>사용처</th>
               <th>내 용</th>
               <th className="amt">총금액</th>
               <th>비 고</th>
@@ -192,6 +213,7 @@ export default function ExpensePage() {
           </thead>
           <tbody>
             <tr className="carry">
+              <td></td>
               <td></td>
               <td className="center">전일(전월) 이월금액</td>
               <td>
@@ -210,8 +232,20 @@ export default function ExpensePage() {
               <td className="no-print"></td>
             </tr>
             {sheet.rows.map((r, i) => (
-              <tr key={i} className={!r.desc && !r.amount ? "empty" : ""}>
-                <td className="no muted">{i + 1}</td>
+              <tr key={i} className={!r.desc && !r.amount && !r.vendor ? "empty" : ""}>
+                <td>
+                  <input
+                    type="date"
+                    className={r.date ? "" : "blank"}
+                    min={`${ym}-01`}
+                    max={`${ym}-${String(lastDay(ym)).padStart(2, "0")}`}
+                    value={r.date}
+                    onChange={(e) => updateRow(i, { date: e.target.value })}
+                  />
+                </td>
+                <td>
+                  <input value={r.vendor} onChange={(e) => updateRow(i, { vendor: e.target.value })} />
+                </td>
                 <td>
                   <input value={r.desc} onChange={(e) => updateRow(i, { desc: e.target.value })} />
                 </td>
@@ -251,7 +285,7 @@ export default function ExpensePage() {
           </tbody>
           <tfoot>
             <tr>
-              <td></td>
+              <td colSpan={2}></td>
               <th>합 계</th>
               <th className="right">{fmt(totals.sum)}</th>
               <td colSpan={3}></td>
@@ -265,28 +299,37 @@ export default function ExpensePage() {
         </datalist>
 
         <h2 className="sub">관리비부과항목별 합계</h2>
-        <table className="table summary">
+        <table className="table expense summary">
           <thead>
             <tr>
               <th>관리비부과항목</th>
+              <th className="cnt">건수</th>
               <th className="amt">금액</th>
             </tr>
           </thead>
           <tbody>
             {totals.byCat.length === 0 && (
               <tr>
-                <td colSpan={2} className="muted">
-                  금액을 입력하면 항목별로 합산됩니다.
+                <td colSpan={3} className="muted pad">
+                  금액과 관리비부과항목을 입력하면 항목별로 합산됩니다.
                 </td>
               </tr>
             )}
-            {totals.byCat.map(([c, n]) => (
+            {totals.byCat.map(([c, n, k]) => (
               <tr key={c}>
-                <td>{c}</td>
-                <td className="right">{fmt(n)}</td>
+                <td className="pad">{c}</td>
+                <td className="pad right">{k}</td>
+                <td className="pad right">{fmt(n)}</td>
               </tr>
             ))}
           </tbody>
+          <tfoot>
+            <tr>
+              <th>합 계</th>
+              <th className="right">{totals.byCat.reduce((x, [, , k]) => x + k, 0)}</th>
+              <th className="right">{fmt(totals.sum)}</th>
+            </tr>
+          </tfoot>
         </table>
       </section>
       <p className="muted small no-print">

@@ -103,8 +103,12 @@ button.small { padding: 2px 8px; font-size: 13px; }
 .table.expense .amt { width: 150px; }
 .table.expense tr.carry td { color: #1d4ed8; }
 .table.expense tfoot th, .table.expense tfoot td { padding: 8px; }
-.table.summary { max-width: 420px; }
+.table.summary { max-width: 480px; }
 .table.summary .amt { width: 160px; }
+.table.summary .cnt { width: 70px; }
+.table.expense td.pad { padding: 6px 8px; }
+.table.expense .date { width: 150px; }
+.table.expense input[type="date"].blank { color: #9ca3af; }
 .sub { margin-top: 20px; }
 
 @media print {
@@ -116,3 +120,4 @@ button.small { padding: 2px 8px; font-size: 13px; }
   input { border: none !important; }
   @page { size: A4; margin: 12mm; }
 }
+.table .right { text-align: right; }
