@@ -18,6 +18,8 @@ const CATEGORIES = [
   "감가상각비",
 ];
 
+const CAT_KEY = "26center:categories";
+
 const emptyRow = (): Row => ({ date: "", vendor: "", desc: "", amount: "", note: "", category: "" });
 
 function monthKey(d = new Date()) {
@@ -56,6 +58,28 @@ export default function ExpensePage() {
   const [ym, setYm] = useState("");
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [savedMsg, setSavedMsg] = useState("");
+  const [cats, setCats] = useState<string[]>(CATEGORIES);
+  const [showCats, setShowCats] = useState(false);
+  const [newCat, setNewCat] = useState("");
+
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(CAT_KEY);
+      if (v) setCats(JSON.parse(v) as string[]);
+    } catch {}
+  }, []);
+  const saveCats = (next: string[]) => {
+    setCats(next);
+    try {
+      localStorage.setItem(CAT_KEY, JSON.stringify(next));
+    } catch {}
+  };
+  const addCat = () => {
+    const c = newCat.trim();
+    if (!c) return;
+    if (!cats.includes(c)) saveCats([...cats, c]);
+    setNewCat("");
+  };
 
   useEffect(() => {
     const k = monthKey();
@@ -90,12 +114,12 @@ export default function ExpensePage() {
       map.set(c, (map.get(c) ?? 0) + n);
       cnt.set(c, (cnt.get(c) ?? 0) + 1);
     }
-    const order = (c: string) => (CATEGORIES.indexOf(c) === -1 ? 999 : CATEGORIES.indexOf(c));
+    const order = (c: string) => (cats.indexOf(c) === -1 ? 999 : cats.indexOf(c));
     const byCat = [...map.entries()]
       .sort((a, b) => order(a[0]) - order(b[0]) || a[0].localeCompare(b[0], "ko"))
       .map(([c, n]) => [c, n, cnt.get(c) ?? 0] as [string, number, number]);
     return { sum, byCat };
-  }, [sheet]);
+  }, [sheet, cats]);
 
   if (!sheet) return null;
   const [y, m] = ym.split("-").map(Number);
@@ -105,6 +129,12 @@ export default function ExpensePage() {
   const updateRow = (i: number, patch: Partial<Row>) => {
     const rows = sheet.rows.map((r, j) => (j === i ? { ...r, ...patch } : r));
     if (i === rows.length - 1) rows.push(emptyRow());
+    update({ rows });
+  };
+
+  const insertRowAfter = (i: number) => {
+    const rows = [...sheet.rows];
+    rows.splice(i + 1, 0, emptyRow());
     update({ rows });
   };
 
@@ -164,6 +194,9 @@ export default function ExpensePage() {
         >
           일자순 정렬
         </button>
+        <button className="ghost" onClick={() => setShowCats(!showCats)}>
+          부과항목 관리
+        </button>
         <button onClick={downloadCsv}>엑셀(CSV) 저장</button>
         <button onClick={() => window.print()}>인쇄</button>
         <button
@@ -174,6 +207,51 @@ export default function ExpensePage() {
         </button>
         <span className="muted small">{savedMsg}</span>
       </div>
+
+      {showCats && (
+        <section className="card no-print cat-panel">
+          <h2>관리비부과항목 목록</h2>
+          <div className="chips">
+            {cats.map((c, i) => (
+              <span className="chip" key={c}>
+                <button
+                  className="ghost small"
+                  title="앞으로"
+                  disabled={i === 0}
+                  onClick={() => {
+                    const n = [...cats];
+                    [n[i - 1], n[i]] = [n[i], n[i - 1]];
+                    saveCats(n);
+                  }}
+                >
+                  ‹
+                </button>
+                {c}
+                <button
+                  className="ghost small danger"
+                  title="목록에서 삭제"
+                  onClick={() => confirm(`'${c}' 항목을 목록에서 삭제할까요? (이미 입력한 행은 그대로 둡니다)`) && saveCats(cats.filter((x) => x !== c))}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="row">
+            <input
+              value={newCat}
+              placeholder="새 항목 이름"
+              onChange={(e) => setNewCat(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addCat()}
+            />
+            <button onClick={addCat}>추가</button>
+            <button className="ghost" onClick={() => confirm("기본 항목 목록으로 되돌릴까요?") && saveCats(CATEGORIES)}>
+              기본값으로
+            </button>
+            <span className="muted small">목록은 모든 달에 공통으로 쓰입니다. ‹ 로 순서를 바꾸면 합계표 순서도 바뀝니다.</span>
+          </div>
+        </section>
+      )}
 
       <section className="sheet">
         <div className="sheet-head">
@@ -207,7 +285,7 @@ export default function ExpensePage() {
               <th>내 용</th>
               <th className="amt">총금액</th>
               <th>비 고</th>
-              <th>관리비부과항목</th>
+              <th className="cat">관리비부과항목</th>
               <th className="no-print"></th>
             </tr>
           </thead>
@@ -265,15 +343,22 @@ export default function ExpensePage() {
                   <input value={r.note} onChange={(e) => updateRow(i, { note: e.target.value })} />
                 </td>
                 <td>
-                  <input
-                    list="categories"
-                    value={r.category}
-                    onChange={(e) => updateRow(i, { category: e.target.value })}
-                  />
+                  <select value={r.category} onChange={(e) => updateRow(i, { category: e.target.value })}>
+                    <option value=""></option>
+                    {cats.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                    {r.category && !cats.includes(r.category) && <option value={r.category}>{r.category}</option>}
+                  </select>
                 </td>
-                <td className="no-print">
+                <td className="no-print row-actions">
+                  <button className="ghost small" title="아래에 빈 행 추가" onClick={() => insertRowAfter(i)}>
+                    +
+                  </button>
                   <button
-                    className="ghost small"
+                    className="ghost small danger"
                     title="행 삭제"
                     onClick={() => update({ rows: sheet.rows.filter((_, j) => j !== i) })}
                   >
@@ -292,11 +377,6 @@ export default function ExpensePage() {
             </tr>
           </tfoot>
         </table>
-        <datalist id="categories">
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c} />
-          ))}
-        </datalist>
 
         <h2 className="sub">관리비부과항목별 합계</h2>
         <table className="table expense summary">

@@ -121,3 +121,19 @@ button.small { padding: 2px 8px; font-size: 13px; }
   @page { size: A4; margin: 12mm; }
 }
 .table .right { text-align: right; }
+
+.table.expense td select { width: 100%; border: none; padding: 6px 4px; font: inherit; background: transparent; color: var(--text); }
+.table.expense td select:focus { outline: 2px solid var(--accent); }
+.table.expense th.no-print, .table.expense td.row-actions { width: 66px; }
+.row-actions { white-space: nowrap; text-align: center; }
+.row-actions button { visibility: hidden; margin: 0 1px; }
+.table.expense tbody tr:hover .row-actions button,
+.table.expense tbody tr:focus-within .row-actions button { visibility: visible; }
+@media (hover: none) { .row-actions button { visibility: visible; } }
+.cat-panel { margin-bottom: 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); border-radius: 16px; padding: 2px 4px 2px 2px; background: #f9fafb; }
+.chip button { border: none; padding: 0 6px; }
+.chip button:disabled { visibility: hidden; }
+@media print { .table.expense td select { appearance: none; } }
+.table.expense th.cat { width: 160px; }
