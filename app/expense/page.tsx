@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fmt, parseAmount } from "@/lib/bills";
 import { loadBackups, loadData, queueSave, type Backup, type SyncStatus } from "@/lib/store";
 import SyncBadge from "@/components/SyncBadge";
+import { importSheetFile, type Imported } from "@/lib/importSheet";
 
 type Row = { date: string; vendor: string; desc: string; amount: string; note: string; category: string };
 type Sheet = { periodStart: string; periodEnd: string; carryOver: string; rows: Row[] };
@@ -61,6 +62,8 @@ export default function ExpensePage() {
   const [loadedYm, setLoadedYm] = useState("");
   const [reload, setReload] = useState(0);
   const skipSave = useRef(true);
+  const pendingImport = useRef<Imported | null>(null);
+  const importRef = useRef<HTMLInputElement>(null);
   const retry = useCallback(() => setReload((n) => n + 1), []);
   const [cats, setCats] = useState<string[]>(CATEGORIES);
   const [showCats, setShowCats] = useState(false);
@@ -107,9 +110,16 @@ export default function ExpensePage() {
       }
       setLoadFail(null);
       skipSave.current = true;
-      setSheet(normalize(value) ?? newSheet(ym));
+      const loadedSheet = normalize(value) ?? newSheet(ym);
+      setSheet(loadedSheet);
       setLoadedYm(ym);
       setStatus(status);
+      const imp = pendingImport.current;
+      if (imp && imp.ym === ym) {
+        pendingImport.current = null;
+        applyImport(imp, loadedSheet);
+        return;
+      }
       setNotice(
         recovered
           ? "이 브라우저에 남아 있던 예전 내용을 찾아 '이전 버전'에 보관했습니다. 필요하면 [이전 버전]에서 되돌리세요."
@@ -200,6 +210,42 @@ export default function ExpensePage() {
     update({ rows });
   };
 
+  function applyImport(imp: Imported, base: Sheet) {
+    const next: Sheet = {
+      periodStart: imp.periodStart ?? base.periodStart,
+      periodEnd: imp.periodEnd ?? base.periodEnd,
+      carryOver: imp.carryOver,
+      rows: [...imp.rows.map((r) => ({ ...emptyRow(), ...r })), ...Array.from({ length: 5 }, emptyRow)],
+    };
+    skipSave.current = true;
+    setSheet(next);
+    queueSave(sheetKey(imp.ym ?? ym), next, setStatus, 0, "restore");
+    setNotice(`엑셀 파일에서 ${imp.rows.length}행을 불러와 저장했습니다. 불러오기 전 내용은 [이전 버전]에 보관되어 있습니다.`);
+  }
+
+  async function onImportFile(file: File) {
+    let imp: Imported;
+    try {
+      imp = await importSheetFile(file);
+    } catch (e) {
+      alert(`파일을 읽지 못했습니다: ${(e as Error).message}`);
+      return;
+    }
+    const sum = imp.rows.reduce((x, r) => x + (parseAmount(r.amount) ?? 0), 0);
+    const target = imp.ym ?? ym;
+    const [ty, tm] = target.split("-").map(Number);
+    const check =
+      imp.fileTotal != null && imp.fileTotal !== sum ? `\n※ 파일의 합계(${fmt(imp.fileTotal)})와 읽은 합계가 다릅니다.` : "";
+    const msg =
+      `${ty}년 ${tm}월 경비내역서로 ${imp.rows.length}행, 합계 ${fmt(sum)}원을 불러옵니다.${check}\n` +
+      `지금 그 달에 있는 내용은 바뀌고, 바뀌기 전 내용은 [이전 버전]에 보관됩니다. 계속할까요?`;
+    if (!confirm(msg)) return;
+    if (target !== ym) {
+      pendingImport.current = { ...imp, ym: target };
+      setYm(target);
+    } else applyImport({ ...imp, ym: target }, sheet!);
+  }
+
   async function copyPrev() {
     const prev = normalize((await loadData<Sheet>(sheetKey(prevMonth(ym)))).value);
     if (!prev) {
@@ -260,6 +306,20 @@ export default function ExpensePage() {
           부과항목 관리
         </button>
         <button onClick={downloadCsv}>엑셀(CSV) 저장</button>
+        <button className="ghost" onClick={() => importRef.current?.click()}>
+          엑셀 불러오기
+        </button>
+        <input
+          ref={importRef}
+          type="file"
+          hidden
+          accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void onImportFile(f);
+            e.target.value = "";
+          }}
+        />
         <button onClick={() => window.print()}>인쇄</button>
         <button
           className="ghost danger"
