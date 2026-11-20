@@ -4,8 +4,8 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// 저장 가능한 키: 월별 경비내역서, 부과항목 목록, 단가 계산 기록
-const KEY_RE = /^(expense:\d{4}-\d{2}|categories|history:(electric|water))$/;
+// 저장 가능한 키: 월별 경비내역서, 부과항목 목록, 단가 계산 기록, 총회 준비
+const KEY_RE = /^(expense:\d{4}-\d{2}|categories|history:(electric|water)|meeting:current)$/;
 const PREFIX = "26center:";
 
 function redis() {

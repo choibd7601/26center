@@ -17,6 +17,10 @@ export default function Home() {
           <h2>③ 경비내역서</h2>
           <p className="muted">월별 경비 입력 · 관리비부과항목별 합계 · 인쇄 / 엑셀(CSV) 저장</p>
         </Link>
+        <Link className="card link" href="/meeting">
+          <h2>④ 총회 준비</h2>
+          <p className="muted">정기·임시총회 단계별 절차·주의사항 · 통지 기한 점검 · 정족수 계산 · 소집통지서·위임장·서면결의서·의사록 등 문서 작성</p>
+        </Link>
       </div>
     </>
   );

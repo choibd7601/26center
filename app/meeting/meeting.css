@@ -1,0 +1,73 @@
+/* 총회 준비 화면 */
+.mt-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.mt-seg { display: inline-flex; border: 1px solid var(--accent); border-radius: 8px; overflow: hidden; }
+.mt-seg button { border: none; border-radius: 0; background: #fff; color: var(--accent); }
+.mt-seg button.on { background: var(--accent); color: #fff; }
+.mt-tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--line); margin: 16px 0; flex-wrap: wrap; }
+.mt-tabs button { background: transparent; color: var(--muted); border: none; border-bottom: 3px solid transparent; border-radius: 0; margin-bottom: -2px; font-weight: 600; }
+.mt-tabs button.on { color: var(--accent); border-bottom-color: var(--accent); }
+
+.mt-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px 16px; }
+.mt-form .f { display: flex; flex-direction: column; gap: 4px; }
+.mt-form .f.wide { grid-column: 1 / -1; }
+.mt-form .f > span { font-size: 13px; font-weight: 600; }
+.mt-form .f small { color: var(--muted); font-size: 12px; }
+.mt textarea, .mt select {
+  font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--text); width: 100%;
+}
+.mt textarea { min-height: 64px; resize: vertical; }
+.mt .f input { width: 100%; }
+
+.mt-checks { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.mt-checks li { padding: 8px 10px; border-radius: 6px; font-size: 14px; }
+.mt-checks li.ok { background: #dcfce7; color: #14532d; }
+.mt-checks li.warn { background: #fef3c7; color: #78350f; }
+.mt-checks li.bad { background: #fee2e2; color: #7f1d1d; font-weight: 600; }
+.mt-checks li.info { background: #e0e7ff; color: #1e3a8a; }
+
+.mt-step { border-left: 4px solid var(--accent); }
+.mt-step .when { color: var(--accent); font-weight: 600; font-size: 14px; margin: -6px 0 10px; }
+.mt-step h3 { font-size: 14px; margin: 12px 0 6px; }
+.mt-step ul { margin: 0; padding-left: 0; list-style: none; }
+.mt-step li { margin: 4px 0; }
+.mt-step .proc label { font-weight: 400; display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
+.mt-step .proc input { margin-top: 4px; }
+.mt-step .proc .done { color: var(--muted); text-decoration: line-through; }
+.mt-step .caution li { background: #fef3c7; border-radius: 6px; padding: 6px 10px; font-size: 14px; }
+.mt-step .caution li::before { content: "⚠ "; }
+.mt-docbtns { display: flex; gap: 6px; flex-wrap: wrap; }
+.mt-progress { height: 8px; background: var(--head); border-radius: 4px; overflow: hidden; margin-top: 6px; }
+.mt-progress > div { height: 100%; background: var(--accent); }
+
+.mt-agenda { border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin-bottom: 10px; background: #fcfcfd; }
+.mt-agenda .top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.mt-agenda .top .no { font-weight: 700; white-space: nowrap; }
+.mt-agenda .top input { flex: 1; min-width: 200px; }
+.mt-agenda .top select { width: auto; }
+
+.mt-scroll { overflow-x: auto; }
+.mt-owners { min-width: 900px; }
+.mt-owners td { padding: 2px 4px; }
+.mt-owners td input, .mt-owners td select { width: 100%; padding: 4px 6px; font-size: 14px; }
+.mt-owners .w-unit { width: 80px; }
+.mt-owners .w-area { width: 100px; }
+.mt-owners .w-att { width: 120px; }
+.mt-owners .w-vote { width: 86px; }
+.mt-owners tfoot td { font-weight: 600; padding: 6px; }
+
+.mt-yes { color: #15803d; font-weight: 700; }
+.mt-no { color: var(--danger); font-weight: 700; }
+
+.mt-docs { display: grid; grid-template-columns: 240px 1fr; gap: 16px; align-items: start; }
+@media (max-width: 900px) { .mt-docs { grid-template-columns: 1fr; } }
+.mt-doclist { display: flex; flex-direction: column; gap: 4px; position: sticky; top: 8px; }
+.mt-doclist button { text-align: left; background: #fff; color: var(--text); border-color: var(--line); }
+.mt-doclist button.on { background: var(--accent-weak); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.mt-doclist button small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; line-height: 1.35; }
+.mt-paper { background: #e5e7eb; padding: 16px; border-radius: 8px; overflow-x: auto; }
+.mt-paper [contenteditable]:focus { outline: none; }
+
+@media print {
+  .mt-paper { background: none; padding: 0; overflow: visible; }
+  .mt-docs { display: block; }
+}
