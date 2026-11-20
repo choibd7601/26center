@@ -1,38 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { STATUS_TEXT, getAccessCode, setAccessCode, type SyncStatus } from "@/lib/store";
+import { STATUS_TEXT, type SyncStatus } from "@/lib/store";
 
 export default function SyncBadge({ status, onRetry }: { status: SyncStatus; onRetry: () => void }) {
-  const [code, setCode] = useState("");
-  const ok = status === "server";
+  const cls = status === "server" ? "ok" : status === "loading" || status === "saving" ? "" : status === "conflict" ? "warn" : "bad";
   return (
-    <span className={`sync ${ok ? "ok" : status === "loading" || status === "saving" ? "" : "bad"}`}>
+    <span className={`sync ${cls}`}>
       {STATUS_TEXT[status]}
-      {status === "auth" && (
-        <>
-          {" "}
-          <input
-            className="code"
-            type="password"
-            placeholder="접속코드"
-            defaultValue={getAccessCode()}
-            onChange={(e) => setCode(e.target.value)}
-          />
-          <button
-            className="small"
-            onClick={() => {
-              setAccessCode(code);
-              onRetry();
-            }}
-          >
-            확인
-          </button>
-        </>
-      )}
-      {(status === "error" || status === "local") && (
+      {(status === "error" || status === "conflict" || status === "nostore") && (
         <button className="ghost small" onClick={onRetry}>
-          다시 시도
+          {status === "conflict" ? "새로 불러오기" : "다시 시도"}
         </button>
       )}
     </span>

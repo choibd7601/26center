@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
+import AuthGate from "@/components/AuthGate";
 
 export const metadata: Metadata = {
   title: "26센터 관리",
@@ -18,7 +19,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Link href="/expense">경비내역서</Link>
           <Link href="/meeting">총회 준비</Link>
         </nav>
-        <main>{children}</main>
+        <main>
+          <AuthGate>{children}</AuthGate>
+        </main>
       </body>
     </html>
   );

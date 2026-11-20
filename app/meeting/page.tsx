@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./meeting.css";
-import { loadData, saveData, type SyncStatus } from "@/lib/store";
+import { loadData, queueSave, type SyncStatus } from "@/lib/store";
 import SyncBadge from "@/components/SyncBadge";
 import {
   ATTEND_LABEL,
@@ -101,9 +101,7 @@ export default function MeetingPage() {
       skipSave.current = false;
       return;
     }
-    setStatus("saving");
-    const t = setTimeout(() => saveData(KEY, m).then(setStatus), 800);
-    return () => clearTimeout(t);
+    queueSave(KEY, m, setStatus);
   }, [m]);
 
   if (!m) return <p className="muted">불러오는 중…</p>;

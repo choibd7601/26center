@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { loadData, saveData, type SyncStatus } from "@/lib/store";
+import { getAccessCode, loadData, saveData, type SyncStatus } from "@/lib/store";
 import SyncBadge from "@/components/SyncBadge";
 import { BILL_FIELDS, fmt, parseAmount, type BillKind, type ReadResult } from "@/lib/bills";
 
@@ -14,20 +14,6 @@ type Props = {
 type HistoryItem = { month: string; savedAt: string; values: Record<string, number | null>; row: Record<string, string> };
 
 const COLORS = ["#e11d48", "#2563eb", "#16a34a", "#d97706", "#7c3aed", "#0891b2"];
-
-function loadStore<T>(key: string, fallback: T): T {
-  try {
-    const v = localStorage.getItem(key);
-    return v ? (JSON.parse(v) as T) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-function saveStore(key: string, v: unknown) {
-  try {
-    localStorage.setItem(key, JSON.stringify(v));
-  } catch {}
-}
 
 async function pdfToImageUrl(file: File) {
   // 스캔 PDF 의 첫 페이지를 이미지로 바꿔서 위치 표시가 되게 한다
@@ -82,8 +68,6 @@ export default function BillReader({ kind, renderResult, historyRow }: Props) {
   const [error, setError] = useState("");
   const [active, setActive] = useState<string | null>(null);
   const [month, setMonth] = useState("");
-  const [accessCode, setAccessCode] = useState("");
-  const [needCode, setNeedCode] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   const histKey = `history:${kind}`;
@@ -91,16 +75,14 @@ export default function BillReader({ kind, renderResult, historyRow }: Props) {
   const [reload, setReload] = useState(0);
 
   useEffect(() => {
-    setAccessCode(loadStore("26center:accessCode", ""));
     const d = new Date();
     setMonth(`${d.getFullYear()}년 ${d.getMonth() + 1}월`);
   }, []);
 
   useEffect(() => {
-    loadData<HistoryItem[]>(histKey).then(({ value, status, fromServer }) => {
+    loadData<HistoryItem[]>(histKey).then(({ value, status }) => {
       setHistory(value ?? []);
       setHistStatus(status);
-      if (status === "server" && !fromServer && value?.length) saveData(histKey, value).then(setHistStatus);
     });
   }, [histKey, reload]);
 
@@ -120,14 +102,11 @@ export default function BillReader({ kind, renderResult, historyRow }: Props) {
       setPreview(prepared.previewUrl);
       const res = await fetch("/api/ocr", {
         method: "POST",
-        headers: { "content-type": "application/json", "x-access-code": accessCode },
+        headers: { "content-type": "application/json", "x-access-code": getAccessCode() },
         body: JSON.stringify({ kind, ...prepared, previewUrl: undefined }),
       });
       const json = await res.json();
-      if (res.status === 401) {
-        setNeedCode(true);
-        throw new Error(json.error);
-      }
+      if (res.status === 401) throw new Error("비밀번호가 만료되었습니다. 새로고침 후 다시 들어와 주세요.");
       if (!res.ok) throw new Error(json.error || "판독 실패");
       const r = json as ReadResult;
       setRead(r);
@@ -178,20 +157,6 @@ export default function BillReader({ kind, renderResult, historyRow }: Props) {
             e.target.value = "";
           }}
         />
-        {needCode && (
-          <div className="row">
-            <label>접속코드</label>
-            <input
-              value={accessCode}
-              onChange={(e) => {
-                setAccessCode(e.target.value);
-                saveStore("26center:accessCode", e.target.value);
-              }}
-              placeholder="관리자에게 받은 접속코드"
-            />
-            <span className="muted">입력 후 파일을 다시 올려주세요.</span>
-          </div>
-        )}
         {error && <p className="error">{error}</p>}
         {read?.warnings?.length ? (
           <ul className="warn">

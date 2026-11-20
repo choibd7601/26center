@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fmt, parseAmount } from "@/lib/bills";
-import { loadData, saveData, type SyncStatus } from "@/lib/store";
+import { loadBackups, loadData, queueSave, type Backup, type SyncStatus } from "@/lib/store";
 import SyncBadge from "@/components/SyncBadge";
 
 type Row = { date: string; vendor: string; desc: string; amount: string; note: string; category: string };
@@ -38,6 +38,12 @@ function newSheet(ym: string): Sheet {
     rows: Array.from({ length: 20 }, emptyRow),
   };
 }
+const SOURCE_LABEL: Record<string, string> = {
+  auto: "자동 보관",
+  browser: "브라우저에 남은 사본",
+  conflict: "저장 충돌로 보관",
+  restore: "되돌리기 전",
+};
 const sheetKey = (ym: string) => `expense:${ym}`;
 function normalize(sh: Sheet | null): Sheet | null {
   if (!sh) return null;
@@ -60,12 +66,17 @@ export default function ExpensePage() {
   const [showCats, setShowCats] = useState(false);
   const [newCat, setNewCat] = useState("");
 
+  const [loadFail, setLoadFail] = useState<SyncStatus | null>(null);
+  const [notice, setNotice] = useState("");
+  const [backups, setBackups] = useState<Backup<Sheet>[] | null>(null);
+  const [showBackups, setShowBackups] = useState(false);
+
   useEffect(() => {
     loadData<string[]>("categories").then(({ value }) => value && setCats(value));
   }, [reload]);
   const saveCats = (next: string[]) => {
     setCats(next);
-    saveData("categories", next).then(setStatus);
+    queueSave("categories", next, setStatus, 0);
   };
   const addCat = () => {
     const c = newCat.trim();
@@ -79,18 +90,31 @@ export default function ExpensePage() {
     setYm(k);
   }, []);
 
-  // 달이 바뀌면 서버에서 불러오기 (서버에 없고 이 브라우저에만 있으면 서버로 올림)
+  // 달이 바뀌면 서버에서 불러오기. 실패하면 편집 화면을 열지 않는다(빈 화면이 서버 내용을 덮어쓰지 않게).
   useEffect(() => {
     if (!ym) return;
     let alive = true;
     setStatus("loading");
     setLoadedYm("");
-    loadData<Sheet>(sheetKey(ym)).then(({ value, status, fromServer }) => {
+    setShowBackups(false);
+    loadData<Sheet>(sheetKey(ym)).then(({ value, status, recovered }) => {
       if (!alive) return;
-      skipSave.current = fromServer || value == null;
+      if (status !== "server") {
+        setSheet(null);
+        setLoadFail(status);
+        setStatus(status);
+        return;
+      }
+      setLoadFail(null);
+      skipSave.current = true;
       setSheet(normalize(value) ?? newSheet(ym));
       setLoadedYm(ym);
       setStatus(status);
+      setNotice(
+        recovered
+          ? "이 브라우저에 남아 있던 예전 내용을 찾아 '이전 버전'에 보관했습니다. 필요하면 [이전 버전]에서 되돌리세요."
+          : "",
+      );
     });
     return () => {
       alive = false;
@@ -104,12 +128,23 @@ export default function ExpensePage() {
       skipSave.current = false;
       return;
     }
-    setStatus("saving");
-    const t = setTimeout(() => {
-      saveData(sheetKey(ym), sheet).then(setStatus);
-    }, 800);
-    return () => clearTimeout(t);
+    queueSave(sheetKey(ym), sheet, setStatus);
   }, [sheet, ym, loadedYm]);
+
+  async function openBackups() {
+    setShowBackups(true);
+    setBackups(null);
+    setBackups((await loadBackups<Sheet>(sheetKey(ym))) ?? []);
+  }
+  function restore(b: Backup<Sheet>) {
+    const sh = normalize(b.value);
+    if (!sh) return;
+    if (!confirm(`${new Date(b.at).toLocaleString("ko-KR")} 버전으로 되돌릴까요? 지금 내용은 이전 버전 목록에 보관됩니다.`)) return;
+    skipSave.current = true;
+    setSheet(sh);
+    queueSave(sheetKey(ym), sh, setStatus, 0, "restore");
+    setShowBackups(false);
+  }
 
   const totals = useMemo(() => {
     if (!sheet) return { sum: 0, byCat: [] as [string, number, number][] };
@@ -131,7 +166,24 @@ export default function ExpensePage() {
     return { sum, byCat };
   }, [sheet, cats]);
 
-  if (!sheet) return null;
+  if (!sheet)
+    return (
+      <>
+        <div className="row no-print toolbar">
+          <label>월 선택</label>
+          <input type="month" value={ym} onChange={(e) => e.target.value && setYm(e.target.value)} />
+        </div>
+        {loadFail ? (
+          <section className="card">
+            <p className="error">서버에서 경비내역서를 불러오지 못했습니다. 저장된 내용을 지키기 위해 편집 화면을 열지 않았습니다.</p>
+            <SyncBadge status={loadFail} onRetry={retry} />{" "}
+            <button onClick={retry}>다시 불러오기</button>
+          </section>
+        ) : (
+          <p className="muted">불러오는 중…</p>
+        )}
+      </>
+    );
   const [y, m] = ym.split("-").map(Number);
   const title = `${y}년 ${m}월`;
 
@@ -215,9 +267,65 @@ export default function ExpensePage() {
         >
           초기화
         </button>
+        <button className="ghost" onClick={openBackups}>
+          이전 버전
+        </button>
         <SyncBadge status={status} onRetry={retry} />
       </div>
 
+      {notice && <p className="warn no-print">{notice}</p>}
+      {showBackups && (
+        <section className="card no-print backups">
+          <div className="row">
+            <h2 style={{ margin: 0 }}>{title} 이전 버전</h2>
+            <button className="ghost small" onClick={() => setShowBackups(false)}>
+              닫기
+            </button>
+          </div>
+          <p className="muted small">
+            수정하는 동안 10분마다, 그리고 되돌리기·충돌·브라우저 사본 발견 때 자동으로 보관됩니다 (최근 200개).
+          </p>
+          {backups == null ? (
+            <p className="muted">불러오는 중…</p>
+          ) : backups.length === 0 ? (
+            <p className="muted">보관된 이전 버전이 없습니다.</p>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>보관 시각</th>
+                  <th>종류</th>
+                  <th className="right">입력 행</th>
+                  <th className="right">합계</th>
+                  <th>첫 항목</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {backups.map((b, i) => {
+                  const sh = normalize(b.value);
+                  const filled = sh?.rows.filter((r) => r.desc || r.amount || r.vendor) ?? [];
+                  const sum = filled.reduce((x, r) => x + (parseAmount(r.amount) ?? 0), 0);
+                  return (
+                    <tr key={i}>
+                      <td>{b.at ? new Date(b.at).toLocaleString("ko-KR") : "-"}</td>
+                      <td>{SOURCE_LABEL[b.source] ?? b.source}</td>
+                      <td className="right">{filled.length}</td>
+                      <td className="right">{fmt(sum)}</td>
+                      <td className="muted small">{filled[0]?.desc || filled[0]?.vendor || "-"}</td>
+                      <td>
+                        <button className="small" onClick={() => restore(b)} disabled={!sh}>
+                          되돌리기
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </section>
+      )}
       {showCats && (
         <section className="card no-print cat-panel">
           <h2>관리비부과항목 목록</h2>
@@ -423,7 +531,7 @@ export default function ExpensePage() {
         </table>
       </section>
       <p className="muted small no-print">
-        입력 내용은 서버에 자동 저장되어 다른 컴퓨터·휴대폰에서도 같은 내용이 보입니다. (서버 연결이 안 될 때는 이 브라우저에 임시 저장)
+        입력 내용은 서버에 자동 저장되어 다른 컴퓨터·휴대폰에서도 같은 내용이 보입니다. 잘못 지웠을 때는 [이전 버전]에서 되돌릴 수 있습니다.
       </p>
     </>
   );

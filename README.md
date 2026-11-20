@@ -14,7 +14,8 @@ Next.js 웹앱 (Vercel 배포용)
 
 ## Vercel 환경변수
 - `ANTHROPIC_API_KEY` (필수, 판독 기능)
-- `ACCESS_CODE` (선택) 설정하면 판독·서버 저장을 쓸 때 접속코드를 한 번 입력해야 합니다.
+- `ACCESS_CODE` (필수) 사이트 비밀번호. 이 비밀번호로 들어와야 보고 저장할 수 있습니다.
+- `NEXT_PUBLIC_IDLE_MINUTES` (선택) 입력이 없을 때 자동으로 잠그는 시간(분), 기본 30. 잠그기 전에 입력 내용을 먼저 저장합니다.
 - `KV_REST_API_URL`, `KV_REST_API_TOKEN` (서버 저장) Vercel > Storage 에서 Upstash for Redis 를 프로젝트에 연결하면 자동 설정됩니다. 없으면 브라우저에만 저장됩니다.
 
 ## 개발
