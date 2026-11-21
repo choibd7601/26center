@@ -719,6 +719,16 @@ function DocsTab({ m, up, doc, setDoc }: TabProps & { doc: DocKey; setDoc: (k: D
               <F label="기타 경과" wide><textarea value={mm.other} onChange={(e) => setMin({ other: e.target.value })} /></F>
             </div>
           )}
+          {doc === "written" && (
+            <div className="mt-form" style={{ marginTop: 12 }}>
+              <F label="안건 및 추인 목적: 배경" wide hint="비우면 이 칸이 서면결의서에 나오지 않습니다">
+                <textarea value={m.purposeBackground} onChange={(e) => up({ purposeBackground: e.target.value })} />
+              </F>
+              <F label="안건 및 추인 목적: 목적" wide>
+                <textarea value={m.purposeGoal} onChange={(e) => up({ purposeGoal: e.target.value })} />
+              </F>
+            </div>
+          )}
           {doc === "result" && (
             <div className="mt-form" style={{ marginTop: 12 }}>
               <F label="결과 공고일"><input type="date" value={m.resultDate} onChange={(e) => up({ resultDate: e.target.value })} /></F>

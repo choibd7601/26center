@@ -301,6 +301,17 @@ function Written({ m, owner }: { m: Meeting; owner?: Owner }) {
     <Page org={orgName(m)}>
       <h1>서 면 결 의 서</h1>
       <p className="center">{m.associationName} {meetingTitle(m)} ({when(m) || "일시"})</p>
+      {(m.purposeBackground.trim() || m.purposeGoal.trim()) && (
+        <>
+          <h3>안건 및 추인 목적</h3>
+          <table className="f">
+            <tbody>
+              {m.purposeBackground.trim() && <tr><th>배 경</th><td className="pre">{m.purposeBackground}</td></tr>}
+              {m.purposeGoal.trim() && <tr><th>목 적</th><td className="pre">{m.purposeGoal}</td></tr>}
+            </tbody>
+          </table>
+        </>
+      )}
       <table className="f">
         <tbody>
           <tr><th>호 실</th><td><V v={owner?.unit ? `${owner.unit}호` : ""} w={40} /></td><th>구분소유자</th><td><V v={owner?.name} w={40} /></td></tr>
@@ -310,13 +321,14 @@ function Written({ m, owner }: { m: Meeting; owner?: Owner }) {
       <p>본인은 위 관리단집회에 참석하지 못하므로 아래 안건에 대하여 다음과 같이 의결권을 행사합니다.</p>
       <table className="f grid">
         <thead>
-          <tr><th style={{ width: "20mm" }}>의안</th><th>안건명</th></tr>
+          <tr><th style={{ width: "20mm" }}>의안</th><th>안건명</th><th style={{ width: "18mm" }}>찬성</th><th style={{ width: "18mm" }}>반대</th></tr>
         </thead>
         <tbody>
           {(list.length ? list : [null, null, null]).map((a, i) => (
-            <tr key={a?.id ?? i}>
+            <tr key={a?.id ?? i} style={{ height: "12mm" }}>
               <td>제{i + 1}호</td>
               <td className="l">{a?.title ?? "\u00a0"}</td>
+              <td></td><td></td>
             </tr>
           ))}
         </tbody>
