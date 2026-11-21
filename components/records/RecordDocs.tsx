@@ -275,9 +275,11 @@ function Result({ r }: { r: MeetingRecord }) {
         )}
       </ol>
       )}
-      <div className="sign-area">
-        <div className="date"><B v={r.resultDate ? fmtDate(r.resultDate, false) : ""} w={50} /></div>
-      </div>
+      {r.resultDate && (
+        <div className="sign-area">
+          <div className="date">{fmtDate(r.resultDate, false)}</div>
+        </div>
+      )}
     </Page>
   );
 }
