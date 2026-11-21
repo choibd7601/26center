@@ -4,8 +4,10 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// 저장 가능한 키: 월별 경비내역서, 부과항목 목록, 단가 계산 기록, 총회 준비
-const KEY_RE = /^(expense:\d{4}-\d{2}|categories|history:(electric|water)|meeting:current)$/;
+// 저장 가능한 키: 월별 경비내역서, 부과항목 목록, 단가 계산 기록, 총회 준비, 회의관리(회의마다 하나)
+const KEY_RE = /^(expense:\d{4}-\d{2}|categories|history:(electric|water)|meeting:current|records:[a-z0-9]{4,40})$/;
+// 목록으로 한꺼번에 읽을 수 있는 키 묶음
+const LIST_RE = /^records$/;
 const PREFIX = "26center:";
 const BACKUP_PREFIX = "26center:backup:";
 const BACKUP_KEEP = 200; // 키마다 보관할 백업 수
@@ -28,11 +30,11 @@ function unwrap(raw: unknown): Envelope | null {
   return { _env: 1, v: 0, at: "", value: raw }; // 예전 형식
 }
 
-function guard(req: Request, key: string | null | undefined) {
+function guard(req: Request, key: string | null | undefined, list = false) {
   const code = process.env.ACCESS_CODE;
   if (!code) return NextResponse.json({ error: "no-access-code" }, { status: 503 });
   if (req.headers.get("x-access-code") !== code) return NextResponse.json({ error: "auth" }, { status: 401 });
-  if (!key || !KEY_RE.test(key)) return NextResponse.json({ error: "bad-key" }, { status: 400 });
+  if (!key || !(list ? LIST_RE : KEY_RE).test(key)) return NextResponse.json({ error: "bad-key" }, { status: 400 });
   const r = redis();
   if (!r) return NextResponse.json({ error: "not-configured" }, { status: 503 });
   return r;
@@ -45,8 +47,31 @@ async function pushBackup(r: Redis, key: string, entry: BackupEntry) {
 
 // GET ?key=...            현재 값
 // GET ?key=...&backups=1  백업 목록 (최신순)
+// GET ?list=records       records:* 전체 (키, 버전, 저장시각, 값)
 export async function GET(req: Request) {
   const url = new URL(req.url);
+  const list = url.searchParams.get("list");
+  if (list) {
+    const r = guard(req, list, true);
+    if (r instanceof NextResponse) return r;
+    const keys: string[] = [];
+    let cursor: string | number = 0;
+    do {
+      const [next, found] = (await r.scan(cursor, { match: `${PREFIX}${list}:*`, count: 500 })) as [string | number, string[]];
+      keys.push(...found);
+      cursor = next;
+    } while (String(cursor) !== "0");
+    const items: { key: string; version: number; at: string; value: unknown }[] = [];
+    for (let i = 0; i < keys.length; i += 100) {
+      const chunk = keys.slice(i, i + 100);
+      const vals = await r.mget<unknown[]>(...chunk);
+      chunk.forEach((k, j) => {
+        const env = unwrap(vals[j]);
+        if (env) items.push({ key: k.slice(PREFIX.length), version: env.v, at: env.at, value: env.value });
+      });
+    }
+    return NextResponse.json({ items });
+  }
   const key = url.searchParams.get("key");
   const r = guard(req, key);
   if (r instanceof NextResponse) return r;
