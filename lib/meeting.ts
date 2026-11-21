@@ -62,6 +62,8 @@ export type Meeting = {
   noticeDate: string; // 통지 도달(발송) 예정일
   noticeMethod: string;
   submitDeadline: string; // 서면결의서·위임장 제출기한
+  submitTime: string; // 제출 마감 시각
+  postEnd: string; // 공고 게시 종료일(비우면 집회일)
   submitPlace: string;
   contact: string;
   totalOwners: string; // 명부가 없을 때 직접 입력
@@ -164,6 +166,8 @@ export function newMeeting(kind: MeetingKind = "regular"): Meeting {
     noticeDate: "",
     noticeMethod: "내용증명 우편 발송 및 건물 게시판·엘리베이터 공고",
     submitDeadline: "",
+    submitTime: "18:00",
+    postEnd: "",
     submitPlace: "관리사무소",
     contact: "",
     totalOwners: "",

@@ -51,6 +51,8 @@ export const DOC_CSS = `
 .mt-page .cut { border-top:1px dashed #777; margin:8mm 0 4mm; padding-top:2mm; font-size:9pt; color:#666; text-align:center; }
 .mt-page.announce h1 { font-size:28pt; margin-bottom:10mm; }
 .mt-page.announce { font-size:13pt; }
+.mt-page.convene .sign-area .who { font-size:28pt; }
+.mt-page .indent { padding-left:2.2em; }
 @page mtdoc { size:A4; margin:0; }
 @media print {
   .mt-page { page:mtdoc; box-shadow:none; margin:0; width:auto; min-height:0; padding:15mm 16mm; page-break-after:always; break-after:page; }
@@ -154,10 +156,10 @@ function Notice({ m, owner }: { m: Meeting; owner?: Owner }) {
 /* ---------- 2. 소집 공고문 ---------- */
 function Announce({ m }: { m: Meeting }) {
   return (
-    <Page className="announce">
+    <Page className="announce convene">
       <h1>관리단집회 소집 공고</h1>
       <p className="big center" style={{ marginBottom: "8mm" }}>
-        {meetingTitle(m)}를 아래와 같이 개최하오니 구분소유자 여러분의 많은 참석을 바랍니다.
+        {m.year ? `${m.year}년도 ` : ""}{m.kind === "regular" ? "정기" : "임시"} 총회를 아래와 같이 개최하오니 소유주 여러분의 많은 참석 바랍니다.
       </p>
       <table className="f">
         <tbody>
@@ -165,7 +167,7 @@ function Announce({ m }: { m: Meeting }) {
           <tr><th>장 소</th><td><B v={m.place} w={70} /></td></tr>
           <tr><th>소집권자</th><td>{convenerText(m)}</td></tr>
           <tr><th>안 건</th><td><AgendaList m={m} withType={false} /></td></tr>
-          <tr><th>참석 대상</th><td>{m.buildingName} 구분소유자(공유 호실은 지정 대표자). 이해관계 있는 점유자는 의견 진술 가능</td></tr>
+          <tr><th>참석 대상</th><td>{m.buildingName} 구분소유자</td></tr>
           <tr>
             <th>불참 시</th>
             <td>
@@ -175,9 +177,20 @@ function Announce({ m }: { m: Meeting }) {
           <tr><th>문 의</th><td><B v={m.contact || m.managerPhone} w={50} /></td></tr>
         </tbody>
       </table>
-      <p className="note">
-        ※ 서류 양식은 {m.submitPlace || "관리사무소"}에서 받으실 수 있습니다. ※ 게시 기간: <B v={m.noticeDate ? fmtDate(m.noticeDate, false) : ""} w={35} /> ~ <B v={m.date ? fmtDate(m.date, false) : ""} w={35} />
-      </p>
+      <div className="note">
+        <p>
+          ※ 위임장은 <B v={m.submitDeadline ? `${fmtDate(m.submitDeadline, false)}${m.submitTime ? ` ${fmtTime(m.submitTime)}` : ""}` : ""} w={45} />까지{" "}
+          {m.submitPlace || "관리사무소"}로 제출하여 주십시오.
+        </p>
+        <p style={{ marginBottom: 0 }}>※ 위임장 및 인감증명서는 공고일 이후 발행한 문서에 한함.</p>
+        <p className="indent">
+          <B v={m.submitDeadline ? fmtDate(m.submitDeadline) : ""} w={40} /> 도착분에 한하여 의결권을 인정함.
+        </p>
+        <p>
+          ※ 게시 기간: <B v={m.noticeDate ? fmtDate(m.noticeDate, false) : ""} w={35} /> ~{" "}
+          <B v={m.postEnd || m.date ? fmtDate(m.postEnd || m.date, false) : ""} w={35} />
+        </p>
+      </div>
       <div className="sign-area">
         <div className="date"><B v={m.noticeDate ? fmtDate(m.noticeDate, false) : ""} w={50} /></div>
         <div className="who">{convenerText(m)}</div>
