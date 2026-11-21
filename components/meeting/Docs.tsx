@@ -172,7 +172,7 @@ function Announce({ m }: { m: Meeting }) {
           <tr>
             <th>불참 시</th>
             <td>
-              위임장 또는 서면결의서를 <B v={m.submitDeadline ? fmtDate(m.submitDeadline) : ""} w={40} />까지 <B v={m.submitPlace} w={30} />에 제출
+              위임장은 <B v={m.submitDeadline ? fmtDate(m.submitDeadline) : ""} w={40} />까지 <B v={m.submitPlace} w={30} />에 제출
             </td>
           </tr>
           <tr><th>문 의</th><td><B v={m.contact || m.managerPhone} w={50} /></td></tr>
