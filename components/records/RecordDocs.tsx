@@ -24,6 +24,13 @@ export const RECORD_DOCS: { key: RecordDocKey; title: (r: MeetingRecord) => stri
 const B = ({ v, w }: { v?: string; w?: number }) =>
   v ? <>{v}</> : <span className="blank" style={w ? { minWidth: `${w}mm` } : undefined}>&nbsp;</span>;
 
+/** 문서 하단 발행 명칭(제목과 같은 글자 크기) */
+const Org = ({ r, big }: { r: MeetingRecord; big?: boolean }) => (
+  <div className="center" style={{ fontSize: big ? "28pt" : "20pt", fontWeight: 700, letterSpacing: "2px", marginTop: "10mm" }}>
+    {r.associationName}
+  </div>
+);
+
 function Page({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <section className={`mt-page ${className}`}>{children}</section>;
 }
@@ -137,10 +144,12 @@ function Minutes({ r }: { r: MeetingRecord }) {
         </>
       )}
 
-      <p style={{ marginTop: "4mm" }}>
-        의장은 회의 목적사항을 모두 마쳤으므로 {r.closeTime ? fmtTime(r.closeTime) : "　　"}에 폐회를 선언하였다. 위 의사의 경과와 결과를 명확히 하기 위하여 이{" "}
-        {minutesName(r.kind)}을 작성{asm ? "하고 의장과 출석한 구분소유자 2인이 다음과 같이 서명 또는 날인한다" : "한다"}.
-      </p>
+      {asm && (
+        <p style={{ marginTop: "4mm" }}>
+          의장은 회의 목적사항을 모두 마쳤으므로 {r.closeTime ? fmtTime(r.closeTime) : "　　"}에 폐회를 선언하였다. 위 의사의 경과와 결과를 명확히 하기 위하여 이{" "}
+          {minutesName(r.kind)}을 작성하고 의장과 출석한 구분소유자 2인이 다음과 같이 서명 또는 날인한다.
+        </p>
+      )}
       <div className="sign-area" style={{ textAlign: "right" }}>
         <div className="date" style={{ textAlign: "center" }}>{r.date ? fmtDate(r.date, false) : "　　　　년　　월　　일"}</div>
         {/* 관리단집회 의사록은 의장과 출석 구분소유자 2인의 서명·날인이 법정 요건(법 제39조)이라 남겨 둔다 */}
@@ -153,6 +162,7 @@ function Minutes({ r }: { r: MeetingRecord }) {
           </>
         )}
       </div>
+      <Org r={r} />
     </Page>
   );
 }
@@ -203,6 +213,7 @@ function Roster({ r }: { r: MeetingRecord }) {
           </tbody>
         </table>
       )}
+      <Org r={r} />
     </Page>
   );
 }
@@ -217,7 +228,7 @@ function Result({ r }: { r: MeetingRecord }) {
   const list = voteAgendas(r);
   return (
     <Page className="announce">
-      <h1>{asm ? "관리단집회 결과 공고" : `${KIND_LABEL[r.kind]} 의결사항 공고`}</h1>
+      <h1>{asm ? "관리단집회 결과 공고" : `${r.associationName} 의결사항 공고`}</h1>
       <p>
         {r.date ? fmtDate(r.date) : "　　"} {r.place}에서 개최한 {r.associationName} {recordTitle(r)}의 의결 결과를 다음과 같이 알려 드립니다.
       </p>
@@ -261,8 +272,8 @@ function Result({ r }: { r: MeetingRecord }) {
       )}
       <div className="sign-area">
         <div className="date"><B v={r.resultDate ? fmtDate(r.resultDate, false) : ""} w={50} /></div>
-        <div className="who">{r.associationName}</div>
       </div>
+      <Org r={r} big />
     </Page>
   );
 }
@@ -295,6 +306,7 @@ function FollowUpDoc({ r }: { r: MeetingRecord }) {
       <div className="sign-area" style={{ textAlign: "right" }}>
         <p>점검일　　　　년　　월　　일　　점검자 <B w={30} /> <span className="stamp">(서명/인)</span></p>
       </div>
+      <Org r={r} />
     </Page>
   );
 }
@@ -338,6 +350,7 @@ function Cover({ r }: { r: MeetingRecord }) {
           ))}
         </tbody>
       </table>
+      <Org r={r} />
     </Page>
   );
 }
