@@ -126,10 +126,10 @@ function Notice({ m, owner }: { m: Meeting; owner?: Owner }) {
           <tr><th>소집권자</th><td><B v={convenerText(m)} /></td></tr>
           <tr><th>회의 안건</th><td><AgendaList m={m} withType={false} /></td></tr>
           <tr>
-            <th>서면결의서·위임장</th>
+            <th>서면결의서</th>
             <td>
               제출기한: <B v={m.submitDeadline ? fmtDate(m.submitDeadline) : ""} w={40} /> 까지 / 제출처: <B v={m.submitPlace} w={30} />
-              <div className="note">우편·팩스·방문 제출, 집회 당일 개회 전까지 현장 제출 가능</div>
+              <div className="note">우편 및 방문 제출</div>
             </td>
           </tr>
           <tr><th>문 의</th><td><B v={m.contact || m.managerPhone} w={50} /></td></tr>
