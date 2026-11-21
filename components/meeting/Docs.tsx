@@ -53,11 +53,16 @@ export const DOC_CSS = `
 .mt-page.announce h1 { font-size:28pt; margin-bottom:10mm; }
 .mt-page.announce { font-size:13pt; }
 .mt-page.convene .sign-area .who { font-size:28pt; }
+.mt-page.rc-page { display:flex; flex-direction:column; }
+.mt-page.rc-page > .rc-body { flex:1 0 auto; }
+.mt-page.rc-page > .rc-org { margin-top:auto; padding-top:10mm; text-align:center; font-size:20pt; font-weight:700; letter-spacing:2px; }
+.mt-page.announce.rc-page > .rc-org { font-size:28pt; }
 .mt-page .indent { padding-left:2.2em; }
 @page mtdoc { size:A4; margin:0; }
 @media print {
   .mt-page { page:mtdoc; box-shadow:none; margin:0; width:auto; min-height:0; padding:15mm 16mm; page-break-after:always; break-after:page; }
   .mt-page:last-child { page-break-after:auto; break-after:auto; }
+  .mt-page.rc-page { min-height:296mm; }
 }
 `;
 
@@ -72,9 +77,18 @@ const when = (m: Meeting) =>
 
 const kindLaw = (m: Meeting) => (m.kind === "regular" ? "제32조" : "제33조");
 
-function Page({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <section className={`mt-page ${className}`}>{children}</section>;
+/** 문서 틀. org를 주면 페이지 맨 아래 가운데에 관리단 명칭을 제목 크기로 넣는다(회의관리 문서와 같은 방식). */
+function Page({ children, className = "", org }: { children: ReactNode; className?: string; org?: string }) {
+  if (!org) return <section className={`mt-page ${className}`}>{children}</section>;
+  return (
+    <section className={`mt-page rc-page ${className}`}>
+      <div className="rc-body">{children}</div>
+      <div className="rc-org">{org}</div>
+    </section>
+  );
 }
+
+const orgName = (m: Meeting) => m.associationName || "26센터 관리단";
 
 function AgendaList({ m, withType = true }: { m: Meeting; withType?: boolean }) {
   const list = m.agendas.filter((a) => a.title.trim());
@@ -110,7 +124,7 @@ function Notice({ m, owner }: { m: Meeting; owner?: Owner }) {
           ? `법원의 소집허가${m.courtPermit ? `(${m.courtPermit})` : ""}에 따라`
           : "";
   return (
-    <Page>
+    <Page org={orgName(m)}>
       <h1>{m.year ? `${m.year}년도 ` : ""}{m.kind === "regular" ? "정기" : "임시"} 총회 소집통지서</h1>
       <p className="to">
         수신: {owner ? <>{ownerLabel(owner)} 구분소유자 귀하</> : <>{m.buildingName} 구분소유자 귀하</>}
@@ -148,7 +162,6 @@ function Notice({ m, owner }: { m: Meeting; owner?: Owner }) {
       </p>
       <div className="sign-area">
         <div className="date"><B v={m.noticeDate ? fmtDate(m.noticeDate, false) : ""} w={50} /></div>
-        <div className="who">{convenerText(m)} <span className="stamp">(인)</span></div>
       </div>
     </Page>
   );
@@ -157,7 +170,7 @@ function Notice({ m, owner }: { m: Meeting; owner?: Owner }) {
 /* ---------- 2. 소집 공고문 ---------- */
 function Announce({ m }: { m: Meeting }) {
   return (
-    <Page className="announce convene">
+    <Page className="announce convene" org={orgName(m)}>
       <h1>{KIND_LABEL[m.kind]} 소집 공고</h1>
       <p className="big center" style={{ marginBottom: "8mm" }}>
         {m.year ? `${m.year}년도 ` : ""}{m.kind === "regular" ? "정기" : "임시"} 총회를 아래와 같이 개최하오니 소유주 여러분의 많은 참석 바랍니다.
@@ -194,7 +207,6 @@ function Announce({ m }: { m: Meeting }) {
       </div>
       <div className="sign-area">
         <div className="date"><B v={m.noticeDate ? fmtDate(m.noticeDate, false) : ""} w={50} /></div>
-        <div className="who">{convenerText(m)}</div>
       </div>
     </Page>
   );
@@ -204,7 +216,7 @@ function Announce({ m }: { m: Meeting }) {
 function Explain({ m }: { m: Meeting }) {
   const list = agendas(m);
   return (
-    <Page>
+    <Page org={orgName(m)}>
       <h1>{meetingTitle(m)} 의안 설명서</h1>
       <p className="right note">집회 일시: {when(m) || "　"} / 장소: {m.place || "　"}</p>
       {list.length === 0 && <p>안건을 입력하세요.</p>}
@@ -224,9 +236,6 @@ function Explain({ m }: { m: Meeting }) {
           </table>
         </div>
       ))}
-      <div className="sign-area">
-        <div className="who">{convenerText(m)}</div>
-      </div>
     </Page>
   );
 }
@@ -289,7 +298,7 @@ function Proxy({ m, owner }: { m: Meeting; owner?: Owner }) {
 function Written({ m, owner }: { m: Meeting; owner?: Owner }) {
   const list = agendas(m);
   return (
-    <Page>
+    <Page org={orgName(m)}>
       <h1>서 면 결 의 서</h1>
       <p className="center">{m.associationName} {meetingTitle(m)} ({when(m) || "일시"})</p>
       <table className="f">
@@ -324,7 +333,6 @@ function Written({ m, owner }: { m: Meeting; owner?: Owner }) {
         <div className="date">　　　　년　　월　　일</div>
         <div>구분소유자 <B v={owner?.name} w={40} /> <span className="stamp">(서명 또는 인)</span></div>
       </div>
-      <p style={{ marginTop: "8mm" }}><b>{m.associationName} 귀중</b></p>
     </Page>
   );
 }
@@ -335,7 +343,7 @@ function Request({ m }: { m: Meeting }) {
   const t = totals(m);
   const need = t.heads ? Math.ceil(t.heads / 5) : 0;
   return (
-    <Page>
+    <Page org={orgName(m)}>
       <h1>{consent ? "관리단집회 소집 동의서" : "관리단집회 소집 청구서"}</h1>
       {!consent && (
         <p className="to">
@@ -360,7 +368,7 @@ function Request({ m }: { m: Meeting }) {
           <tr><th style={{ width: "10mm" }}>번호</th><th style={{ width: "22mm" }}>호실</th><th>성명</th><th>연락처</th><th style={{ width: "32mm" }}>서명 또는 날인</th></tr>
         </thead>
         <tbody>
-          {Array.from({ length: Math.max(15, need) }, (_, i) => (
+          {Array.from({ length: Math.max(10, need) }, (_, i) => (
             <tr key={i} style={{ height: "10mm" }}>
               <td>{i + 1}</td><td></td><td></td><td></td><td></td>
             </tr>
@@ -370,9 +378,6 @@ function Request({ m }: { m: Meeting }) {
       <p className="note">※ 각 {consent ? "동의자" : "청구인"}의 신분증 사본 또는 인감증명서를 첨부합니다. 공유 호실은 지정 대표자가 서명합니다.</p>
       <div className="sign-area">
         <div className="date"><B v={m.requestDate ? fmtDate(m.requestDate, false) : ""} w={50} /></div>
-        <div className="who">
-          {consent ? "동의" : "청구"} 구분소유자 대표 <B v={m.convenerRep} w={30} /> 외 <B v={m.convenerCount ? String(Math.max(0, num(m.convenerCount) - 1)) : ""} w={10} />인 <span className="stamp">(인)</span>
-        </div>
       </div>
     </Page>
   );
@@ -382,7 +387,7 @@ function Request({ m }: { m: Meeting }) {
 function Rep({ m, owner }: { m: Meeting; owner?: Owner }) {
   const co = owner ? [owner.name, ...owner.coOwners.split(/[,·/]/).map((s) => s.trim()).filter(Boolean)] : [];
   return (
-    <Page>
+    <Page org={orgName(m)}>
       <h1>공유자 대표자 지정서</h1>
       <p>
         아래 전유부분의 공유자들은 「집합건물의 소유 및 관리에 관한 법률」 제37조 제2항에 따라 {m.associationName}의 관리단집회에서 의결권을 행사할 자(통지를 받을 자)로
@@ -407,7 +412,6 @@ function Rep({ m, owner }: { m: Meeting; owner?: Owner }) {
       </table>
       <p className="note">※ 공유자 전원의 신분증 사본을 첨부합니다. 지정서가 없으면 통지는 공유자 중 1인에게 할 수 있으나, 의결권 행사에 다툼이 생길 수 있습니다.</p>
       <div className="sign-area"><div className="date">　　　　년　　월　　일</div></div>
-      <p style={{ marginTop: "6mm" }}><b>{m.associationName} 귀중</b></p>
     </Page>
   );
 }
@@ -535,7 +539,7 @@ function Result({ m }: { m: Meeting }) {
   const at = attendance(m);
   const suit = cancelSuitDeadline(m);
   return (
-    <Page className="announce">
+    <Page className="announce" org={orgName(m)}>
       <h1>관리단집회 결과 공고</h1>
       <p>
         {m.date ? fmtDate(m.date) : "　　"} {m.place}에서 개최한 {m.associationName} {meetingTitle(m)}의 결의 결과를 다음과 같이 알려 드립니다.
@@ -568,7 +572,6 @@ function Result({ m }: { m: Meeting }) {
       </ol>
       <div className="sign-area">
         <div className="date"><B v={m.resultDate ? fmtDate(m.resultDate, false) : ""} w={50} /></div>
-        <div className="who">{m.associationName} {m.managerName ? `관리인 ${m.managerName}` : convenerText(m)}</div>
       </div>
     </Page>
   );
