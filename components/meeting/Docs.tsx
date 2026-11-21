@@ -303,8 +303,8 @@ function Written({ m, owner }: { m: Meeting; owner?: Owner }) {
       <p className="center">{m.associationName} {meetingTitle(m)} ({when(m) || "일시"})</p>
       <table className="f">
         <tbody>
-          <tr><th>호 실</th><td><B v={owner?.unit ? `${owner.unit}호` : ""} w={40} /></td><th>구분소유자</th><td><B v={owner?.name} w={40} /></td></tr>
-          <tr><th>전유면적</th><td><B v={owner?.area ? `${owner.area}㎡` : ""} w={30} /></td><th>연락처</th><td><B v={owner?.phone} w={40} /></td></tr>
+          <tr><th>호 실</th><td><V v={owner?.unit ? `${owner.unit}호` : ""} w={40} /></td><th>구분소유자</th><td><V v={owner?.name} w={40} /></td></tr>
+          <tr><th>전유면적</th><td><V v={owner?.area ? `${owner.area}㎡` : ""} w={30} /></td><th>연락처</th><td><V v={owner?.phone} w={40} /></td></tr>
         </tbody>
       </table>
       <p>본인은 위 관리단집회에 참석하지 못하므로 아래 안건에 대하여 다음과 같이 의결권을 행사합니다.</p>
