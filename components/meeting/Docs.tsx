@@ -256,7 +256,7 @@ function Proxy({ m, owner }: { m: Meeting; owner?: Owner }) {
       )}
       <div className="sign-area">
         <div className="date">　　　　년　　월　　일</div>
-        <div>위임인 <B v={owner?.name} w={40} /> <span className="stamp">(서명 또는 인)</span></div>
+        <div>위임인 <B v={owner?.name} w={40} /> <span className="stamp">(인감날인)</span></div>
       </div>
       <p style={{ marginTop: "8mm" }}><b>{m.associationName} 귀중</b></p>
       <div className="box note">
