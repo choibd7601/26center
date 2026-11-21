@@ -51,8 +51,9 @@ export const DOC_CSS = `
 .mt-page .cut { border-top:1px dashed #777; margin:8mm 0 4mm; padding-top:2mm; font-size:9pt; color:#666; text-align:center; }
 .mt-page.announce h1 { font-size:28pt; margin-bottom:10mm; }
 .mt-page.announce { font-size:13pt; }
+@page mtdoc { size:A4; margin:0; }
 @media print {
-  .mt-page { box-shadow:none; margin:0; width:auto; min-height:0; padding:0; page-break-after:always; break-after:page; }
+  .mt-page { page:mtdoc; box-shadow:none; margin:0; width:auto; min-height:0; padding:15mm 16mm; page-break-after:always; break-after:page; }
   .mt-page:last-child { page-break-after:auto; break-after:auto; }
 }
 `;
@@ -246,19 +247,16 @@ function Proxy({ m, owner }: { m: Meeting; owner?: Owner }) {
         아래 안건에 관한 의결권을 행사하는 일체의 권한을 위 수임인에게 위임합니다.
       </p>
       {list.length > 0 && (
-        <>
-          <table className="f grid">
-            <thead>
-              <tr><th>의안</th><th>안건명</th><th style={{ width: "18mm" }}>찬성</th><th style={{ width: "18mm" }}>반대</th><th style={{ width: "18mm" }}>수임인 판단</th></tr>
-            </thead>
-            <tbody>
-              {list.map((a, i) => (
-                <tr key={a.id}><td>제{i + 1}호</td><td className="l">{a.title}</td><td>☐</td><td>☐</td><td>☐</td></tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="note">※ 찬반 지시란은 선택 사항입니다. 표시하면 수임인은 그에 따라 의결권을 행사합니다.</p>
-        </>
+        <table className="f grid">
+          <thead>
+            <tr><th style={{ width: "20mm" }}>의안</th><th>안건명</th></tr>
+          </thead>
+          <tbody>
+            {list.map((a, i) => (
+              <tr key={a.id}><td>제{i + 1}호</td><td className="l">{a.title}</td></tr>
+            ))}
+          </tbody>
+        </table>
       )}
       <div className="sign-area">
         <div className="date">　　　　년　　월　　일</div>
