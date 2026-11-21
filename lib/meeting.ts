@@ -1,4 +1,4 @@
-// 관리단집회(총회) 준비: 자료형, 날짜·기한 계산, 의결 정족수 계산
+// 총회(관리단집회) 준비: 자료형, 날짜·기한 계산, 의결 정족수 계산
 
 export type MeetingKind = "regular" | "special";
 /** manager: 관리인 직권 소집, request: 구분소유자 1/5 청구 → 관리인 소집,
@@ -78,7 +78,7 @@ export type Meeting = {
 };
 
 export const KIND_LABEL: Record<MeetingKind, string> = { regular: "정기총회", special: "임시총회" };
-export const KIND_FORMAL: Record<MeetingKind, string> = { regular: "정기 관리단집회", special: "임시 관리단집회" };
+export const KIND_FORMAL: Record<MeetingKind, string> = { regular: "정기 총회", special: "임시 총회" };
 
 export const CONVENER_LABEL: Record<Convener, string> = {
   manager: "관리인이 직권으로 소집",
