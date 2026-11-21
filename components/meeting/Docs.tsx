@@ -117,7 +117,7 @@ function Notice({ m, owner }: { m: Meeting; owner?: Owner }) {
       </p>
       <p>
         「집합건물의 소유 및 관리에 관한 법률」 {kindLaw(m)}·제34조 및 {m.associationName} 관리규약에 따라 {basis ? `${basis} ` : ""}
-        아래와 같이 {meetingTitle(m)}를 소집하오니 참석하여 주시기 바랍니다.
+        아래와 같이 {m.year ? `${m.year}년도 ` : ""}{m.kind === "regular" ? "정기" : "임시"} 총회를 소집하오니 참석하여 주시기 바랍니다.
       </p>
       <table className="f">
         <tbody>
