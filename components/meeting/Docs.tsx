@@ -61,6 +61,9 @@ export const DOC_CSS = `
 const B = ({ v, w }: { v?: string; w?: number }) =>
   v ? <>{v}</> : <span className="blank" style={w ? { minWidth: `${w}mm` } : undefined}>&nbsp;</span>;
 
+/** 밑줄 없는 입력란 */
+const V = ({ v }: { v?: string; w?: number }) => <>{v || "\u00a0"}</>;
+
 const when = (m: Meeting) =>
   m.date ? `${fmtDate(m.date)} ${fmtTime(m.time)}` : "";
 
@@ -118,14 +121,7 @@ function Notice({ m, owner }: { m: Meeting; owner?: Owner }) {
           <tr><th>일 시</th><td><B v={when(m)} w={70} /></td></tr>
           <tr><th>장 소</th><td><B v={m.place} w={70} /></td></tr>
           <tr><th>소집권자</th><td><B v={convenerText(m)} /></td></tr>
-          <tr><th>회의 목적사항</th><td><AgendaList m={m} /></td></tr>
-          <tr>
-            <th>의결 방법</th>
-            <td className="note">
-              안건별로 표시한 요건에 따라 전체 구분소유자 수와 의결권(전유면적 비율)을 모두 충족해야 가결됩니다.
-              직접 참석, 대리인 참석(위임장), 서면결의서 제출로 의결권을 행사할 수 있습니다.
-            </td>
-          </tr>
+          <tr><th>회의 안건</th><td><AgendaList m={m} withType={false} /></td></tr>
           <tr>
             <th>서면결의서·위임장</th>
             <td>
@@ -138,10 +134,10 @@ function Notice({ m, owner }: { m: Meeting; owner?: Owner }) {
       </table>
       <h3>안내 사항</h3>
       <ol className="note">
-        <li>참석하지 못하시는 경우 동봉한 위임장으로 대리인을 보내시거나, 서면결의서에 안건별 찬반을 표시해 제출해 주십시오.</li>
-        <li>위임장에는 위임인의 신분증 사본(또는 인감증명서)을, 대리인은 본인 신분증을 지참해 주십시오.</li>
+        <li>참석하지 못하시는 경우 동봉한 위임장으로 대리인을 선임하여 주십시오.</li>
+        <li>위임장에는 위임인의 신분증 사본과 인감증명서 1부를 대리인은 본인 신분증을 지참해 주십시오.</li>
         <li>한 호실을 여러 분이 공유하시는 경우 의결권을 행사할 대표자 1인을 정하여 공유자 대표자 지정서를 제출해 주십시오.</li>
-        <li>위에 적은 회의 목적사항 외의 사항은 결의하지 않습니다.</li>
+        <li>위에 적은 회의 안건 외의 사항은 결의하지 않습니다.</li>
         <li>점유자(세입자)께서도 이해관계가 있는 안건에 대하여 집회에 출석하여 의견을 진술하실 수 있습니다.</li>
       </ol>
       <p className="note">
@@ -230,16 +226,16 @@ function Proxy({ m, owner }: { m: Meeting; owner?: Owner }) {
       <h3>위임인(구분소유자)</h3>
       <table className="f">
         <tbody>
-          <tr><th>호 실</th><td><B v={owner?.unit ? `${owner.unit}호` : ""} w={40} /></td><th>성 명</th><td><B v={owner?.name} w={40} /></td></tr>
-          <tr><th>전유면적</th><td><B v={owner?.area ? `${owner.area}㎡` : ""} w={30} /></td><th>연락처</th><td><B v={owner?.phone} w={40} /></td></tr>
-          <tr><th>주 소</th><td colSpan={3}><B v={owner?.address} w={100} /></td></tr>
+          <tr><th>호 실</th><td><V v={owner?.unit ? `${owner.unit}호` : ""} w={40} /></td><th>성 명</th><td><V v={owner?.name} w={40} /></td></tr>
+          <tr><th>전유면적</th><td><V v={owner?.area ? `${owner.area}㎡` : ""} w={30} /></td><th>연락처</th><td><V v={owner?.phone} w={40} /></td></tr>
+          <tr><th>주 소</th><td colSpan={3}><V v={owner?.address} w={100} /></td></tr>
         </tbody>
       </table>
       <h3>수임인(대리인)</h3>
       <table className="f">
         <tbody>
-          <tr><th>성 명</th><td><B v={owner?.proxyName} w={40} /></td><th>생년월일</th><td><B w={40} /></td></tr>
-          <tr><th>연락처</th><td><B w={40} /></td><th>위임인과 관계</th><td><B w={30} /></td></tr>
+          <tr><th>성 명</th><td><V v={owner?.proxyName} w={40} /></td><th>생년월일</th><td><V /></td></tr>
+          <tr><th>연락처</th><td><V /></td><th>위임인과 관계</th><td><V /></td></tr>
         </tbody>
       </table>
       <p>
@@ -260,12 +256,16 @@ function Proxy({ m, owner }: { m: Meeting; owner?: Owner }) {
       )}
       <div className="sign-area">
         <div className="date">　　　　년　　월　　일</div>
-        <div>위임인 <B v={owner?.name} w={40} /> <span className="stamp">(서명 또는 인)</span></div>
+        <div>위임인 <B v={owner?.name} w={40} /> <span className="stamp">(인감날인)</span></div>
       </div>
       <p style={{ marginTop: "8mm" }}><b>{m.associationName} 귀중</b></p>
       <div className="box note">
-        첨부: 위임인 신분증 사본 또는 인감증명서 1부(규약에서 정한 서류), 수임인 신분증(집회 당일 지참).
-        제출: {m.submitDeadline ? `${fmtDate(m.submitDeadline)}까지 ` : ""}{m.submitPlace || "관리사무소"} 또는 집회 당일 개회 전 접수처.
+        <div>첨부: 위임인 신분증 사본과 인감증명서 1부</div>
+        <div style={{ paddingLeft: "3em" }}>수임인 신분증(집회 당일 지참).</div>
+        <div>제출: {m.submitDeadline ? `${fmtDate(m.submitDeadline)}까지 ` : "　　　　까지 "}{m.submitPlace || "관리사무소"}</div>
+        <div>
+          인감증명서는 공고일 이후 발행한 문서에 한함, {m.submitDeadline ? fmtDate(m.submitDeadline) : "제출기한"} 도착분에 한하여 의결권을 인정함.
+        </div>
       </div>
     </Page>
   );
