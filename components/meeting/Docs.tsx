@@ -111,7 +111,7 @@ function Notice({ m, owner }: { m: Meeting; owner?: Owner }) {
           : "";
   return (
     <Page>
-      <h1>{meetingTitle(m)} 소집통지서</h1>
+      <h1>{m.year ? `${m.year}년도 ` : ""}{m.kind === "regular" ? "정기" : "임시"} 총회 소집통지서</h1>
       <p className="to">
         수신: {owner ? <>{ownerLabel(owner)} 구분소유자 귀하</> : <>{m.buildingName} 구분소유자 귀하</>}
       </p>
