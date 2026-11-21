@@ -42,7 +42,7 @@ function Minutes({ r }: { r: MeetingRecord }) {
   const reports = list.filter((a) => a.mode === "report");
   const votes = list.filter((a) => a.mode === "vote");
   const signers = r.signers.filter((s) => s.trim());
-  const signRows = signers.length ? signers : asm ? ["", ""] : [""];
+  const signRows = signers.length ? signers : ["", ""];
   let n = 1;
   return (
     <Page>
@@ -52,7 +52,6 @@ function Minutes({ r }: { r: MeetingRecord }) {
           <tr><th>일 시</th><td>{r.date ? fmtDate(r.date) : <B w={40} />} 개회 <B v={r.openTime ? fmtTime(r.openTime) : ""} w={20} /> ~ 폐회 <B v={r.closeTime ? fmtTime(r.closeTime) : ""} w={20} /></td></tr>
           <tr><th>장 소</th><td><B v={r.place} w={60} /></td></tr>
           {(asm || r.convener) && <tr><th>소집권자</th><td><B v={r.convener} w={50} /></td></tr>}
-          <tr><th>의장 / 서기</th><td>의장 <B v={r.chair} w={30} /> / 서기 <B v={r.secretary} w={30} /></td></tr>
         </tbody>
       </table>
 
@@ -140,14 +139,19 @@ function Minutes({ r }: { r: MeetingRecord }) {
 
       <p style={{ marginTop: "4mm" }}>
         의장은 회의 목적사항을 모두 마쳤으므로 {r.closeTime ? fmtTime(r.closeTime) : "　　"}에 폐회를 선언하였다. 위 의사의 경과와 결과를 명확히 하기 위하여 이{" "}
-        {minutesName(r.kind)}을 작성하고 의장과 {asm ? "출석한 구분소유자 2인이" : "출석 위원이"} 다음과 같이 서명 또는 날인한다.
+        {minutesName(r.kind)}을 작성{asm ? "하고 의장과 출석한 구분소유자 2인이 다음과 같이 서명 또는 날인한다" : "한다"}.
       </p>
       <div className="sign-area" style={{ textAlign: "right" }}>
         <div className="date" style={{ textAlign: "center" }}>{r.date ? fmtDate(r.date, false) : "　　　　년　　월　　일"}</div>
-        <p>의　　장 <B v={r.chair} w={35} /> <span className="stamp">(서명/인)</span></p>
-        {signRows.map((s, i) => (
-          <p key={i}>{asm ? "구분소유자" : r.kind === "committee" ? "위　　원" : "참 석 자"} <B v={s} w={35} /> <span className="stamp">(서명/인)</span></p>
-        ))}
+        {/* 관리단집회 의사록은 의장과 출석 구분소유자 2인의 서명·날인이 법정 요건(법 제39조)이라 남겨 둔다 */}
+        {asm && (
+          <>
+            <p>의　　장 <B v={r.chair} w={35} /> <span className="stamp">(서명/인)</span></p>
+            {signRows.map((s, i) => (
+              <p key={i}>구분소유자 <B v={s} w={35} /> <span className="stamp">(서명/인)</span></p>
+            ))}
+          </>
+        )}
       </div>
     </Page>
   );
@@ -256,7 +260,7 @@ function Result({ r }: { r: MeetingRecord }) {
       </ol>
       <div className="sign-area">
         <div className="date"><B v={r.resultDate ? fmtDate(r.resultDate, false) : ""} w={50} /></div>
-        <div className="who">{r.associationName} {r.kind === "committee" ? `관리위원회 위원장 ${r.chair}` : r.convener}</div>
+        <div className="who">{r.associationName}{isAssembly(r.kind) && r.convener ? ` ${r.convener}` : ""}</div>
       </div>
     </Page>
   );
