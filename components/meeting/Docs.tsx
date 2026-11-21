@@ -310,22 +310,19 @@ function Written({ m, owner }: { m: Meeting; owner?: Owner }) {
       <p>본인은 위 관리단집회에 참석하지 못하므로 아래 안건에 대하여 다음과 같이 의결권을 행사합니다.</p>
       <table className="f grid">
         <thead>
-          <tr><th style={{ width: "18mm" }}>의안</th><th>안건명</th><th style={{ width: "30mm" }}>결의 요건</th><th style={{ width: "15mm" }}>찬성</th><th style={{ width: "15mm" }}>반대</th><th style={{ width: "15mm" }}>기권</th></tr>
+          <tr><th style={{ width: "20mm" }}>의안</th><th>안건명</th></tr>
         </thead>
         <tbody>
           {(list.length ? list : [null, null, null]).map((a, i) => (
-            <tr key={a?.id ?? i} style={{ height: "12mm" }}>
+            <tr key={a?.id ?? i}>
               <td>제{i + 1}호</td>
-              <td className="l">{a?.title}</td>
-              <td className="note">{a ? RESOLUTION[a.type].short : ""}</td>
-              <td></td><td></td><td></td>
+              <td className="l">{a?.title ?? "\u00a0"}</td>
             </tr>
           ))}
         </tbody>
       </table>
       <ol className="note">
-        <li>안건마다 찬성·반대·기권 중 한 칸에만 ○ 또는 ✓ 표시해 주십시오. 표시가 없거나 두 칸 이상 표시한 안건은 기권으로 처리합니다.</li>
-        <li>제출기한: {m.submitDeadline ? fmtDate(m.submitDeadline) : "　　　　"}까지 / 제출처: {m.submitPlace || "　　　　"} (우편·팩스·방문)</li>
+        <li>제출기한: {m.submitDeadline ? fmtDate(m.submitDeadline) : "　　　　"}까지 / 제출처: {m.submitPlace || "　　　　"} (우편·방문)</li>
         <li>본인 확인을 위해 신분증 사본(또는 인감증명서)을 함께 제출해 주십시오. 공유 호실은 지정된 대표자가 작성합니다.</li>
         <li>서면결의서를 제출한 뒤 집회에 직접 출석하시면 현장 의결이 우선합니다.</li>
       </ol>
