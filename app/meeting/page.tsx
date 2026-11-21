@@ -352,6 +352,8 @@ function InfoTab({ m, up }: TabProps) {
           <F label="서면결의서·위임장 제출기한" hint={m.date ? `예: 집회 전날 ${fmtDate(toISO(addDays(parseDate(m.date)!, -1)))}` : undefined}>
             <input type="date" {...t("submitDeadline")} />
           </F>
+          <F label="제출 마감 시각" hint="소집 공고에 표시"><input type="time" {...t("submitTime")} /></F>
+          <F label="공고 게시 종료일" hint="비워 두면 집회일까지"><input type="date" {...t("postEnd")} /></F>
           <F label="제출처"><input {...t("submitPlace")} /></F>
           <F label="통지 방법" wide><input {...t("noticeMethod")} /></F>
         </div>
