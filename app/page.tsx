@@ -21,6 +21,10 @@ export default function Home() {
           <h2>④ 총회 준비</h2>
           <p className="muted">정기·임시총회 단계별 절차·주의사항 · 통지 기한 점검 · 정족수 계산 · 소집통지서·위임장·서면결의서·의사록 등 문서 작성</p>
         </Link>
+        <Link className="card link" href="/records">
+          <h2>⑤ 집합건물 회의관리</h2>
+          <p className="muted">관리단집회·관리위원회 회의별 의사록·참석자 명부·결과 공고문·이행 점검표·서류 보관 표지 작성 · 서버 저장 · 회의 목록 관리</p>
+        </Link>
       </div>
     </>
   );

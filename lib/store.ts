@@ -192,3 +192,18 @@ export async function loadBackups<T>(key: string): Promise<Backup<T>[] | null> {
     return null;
   }
 }
+
+/** 묶음(예: "records")의 모든 항목을 서버에서 읽는다. 실패하면 null. */
+export async function loadList<T>(
+  list: string,
+): Promise<{ items: { key: string; version: number; at: string; value: T }[] | null; status: SyncStatus }> {
+  try {
+    const res = await fetch(`/api/data?list=${encodeURIComponent(list)}`, { headers: headers(), cache: "no-store" });
+    const status = statusOf(res);
+    if (status !== "server") return { items: null, status };
+    const { items } = (await res.json()) as { items: { key: string; version: number; at: string; value: T }[] };
+    return { items, status };
+  } catch {
+    return { items: null, status: "error" };
+  }
+}

@@ -1,0 +1,22 @@
+/* 집합건물 회의관리 */
+.rc-fs { border: none; padding: 0; margin: 0; min-width: 0; }
+.rc-fs:disabled { opacity: 0.75; }
+.rc-list .rc-row { cursor: pointer; }
+.rc-list .rc-row:hover td { background: var(--accent-weak); }
+.rc-list td { vertical-align: top; }
+.rc-ag { display: inline-block; margin-right: 10px; }
+.rc-ag::before { content: "· "; }
+.rc-kind { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 10px; background: #e5e7eb; white-space: nowrap; }
+.rc-kind.k-regular { background: #dbeafe; color: #1e3a8a; }
+.rc-kind.k-special { background: #fce7f3; color: #831843; }
+.rc-kind.k-committee { background: #dcfce7; color: #14532d; }
+.rc-st { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 10px; white-space: nowrap; }
+.rc-st.draft { background: #fef3c7; color: #78350f; }
+.rc-st.final { background: #dcfce7; color: #14532d; font-weight: 600; }
+.rc-st.deleted { background: #fee2e2; color: #7f1d1d; font-size: 13px; vertical-align: middle; }
+.rc-counts { gap: 16px; }
+.rc-count { display: inline-flex; align-items: center; gap: 4px; }
+.rc-count span { font-weight: 600; font-size: 14px; }
+.rc-count input.num { width: 80px; }
+.mt-agenda.card { margin-bottom: 0; }
+.rc-list td:first-child { white-space: nowrap; }
