@@ -64,6 +64,8 @@ export type Meeting = {
   submitDeadline: string; // 서면결의서·위임장 제출기한
   submitTime: string; // 제출 마감 시각
   postEnd: string; // 공고 게시 종료일(비우면 집회일)
+  purposeBackground: string; // 서면결의서 안건 및 추인 목적: 배경
+  purposeGoal: string; // 서면결의서 안건 및 추인 목적: 목적
   submitPlace: string;
   contact: string;
   totalOwners: string; // 명부가 없을 때 직접 입력
@@ -168,6 +170,10 @@ export function newMeeting(kind: MeetingKind = "regular"): Meeting {
     submitDeadline: "",
     submitTime: "18:00",
     postEnd: "",
+    purposeBackground:
+      "전임 소장의 사임서(2025.07.30. 제출, 2025.08.05 수리) 이후 비상운영 체제를 거쳐 2025년 9월 26일 임시총회를 통해 관리단 대표 및 임원 3인을 선임한 바 있습니다.",
+    purposeGoal:
+      "일각에서 제기하는 관리규약상의 추인 절차 관련 시비 및 절차상 오해를 완벽히 해소하고 관리단의 안정적 운영과 입주민의 재산권 보호를 위하여 2025년 9월 26일 자 총회 결의사항을 현시점에서 재확인 및 추인하고자 합니다.",
     submitPlace: "관리사무소",
     contact: "",
     totalOwners: "",
