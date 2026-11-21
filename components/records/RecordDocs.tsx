@@ -252,15 +252,16 @@ function Result({ r }: { r: MeetingRecord }) {
           {list.length === 0 && <tr><td colSpan={4}>의결 안건 없음</td></tr>}
         </tbody>
       </table>
+      {asm && (
       <ol className="note">
-        <li>{minutesName(r.kind)}은 {r.storage || "관리사무소"}에 보관되어 있으며, 이해관계인은 열람 또는 등본 교부를 청구할 수 있습니다.</li>
-        {asm && (
+        {(
           <li>결의에 이의가 있는 구분소유자는 결의일로부터 6개월 이내{suit ? `(${fmtDate(suit, false)}까지)` : ""} 결의 취소의 소를 제기할 수 있습니다(법 제42조의2).</li>
         )}
       </ol>
+      )}
       <div className="sign-area">
         <div className="date"><B v={r.resultDate ? fmtDate(r.resultDate, false) : ""} w={50} /></div>
-        <div className="who">{r.associationName}{isAssembly(r.kind) && r.convener ? ` ${r.convener}` : ""}</div>
+        <div className="who">{r.associationName}</div>
       </div>
     </Page>
   );
