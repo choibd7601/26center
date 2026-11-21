@@ -49,7 +49,7 @@ import {
   type ResultChoice,
 } from "@/lib/records";
 import { DOC_CSS } from "@/components/meeting/Docs";
-import { RECORD_DOCS, RecordDocView, type RecordDocKey } from "@/components/records/RecordDocs";
+import { RECORD_CSS, RECORD_DOCS, RecordDocView, type RecordDocKey } from "@/components/records/RecordDocs";
 
 const keyOf = (id: string) => `records:${id}`;
 const KINDS: RecordKind[] = ["regular", "special", "committee", "other"];
@@ -882,7 +882,7 @@ function DocsTab({ r, up, doc, setDoc }: { r: MeetingRecord; up: Up; doc: Record
   const info = RECORD_DOCS.find((d) => d.key === doc)!;
   const fileBase = `${recordTitle(r)}_${info.title(r)}`.replace(/[\\/:*?"<>|\s·]+/g, "_");
   const html = (forWord: boolean) =>
-    `<!doctype html><html lang="ko"${forWord ? ` xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"` : ""}><head><meta charset="utf-8"><title>${fileBase}</title><style>${DOC_CSS}${
+    `<!doctype html><html lang="ko"${forWord ? ` xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"` : ""}><head><meta charset="utf-8"><title>${fileBase}</title><style>${DOC_CSS}${RECORD_CSS}${
       forWord ? ".mt-page{width:auto;min-height:0;padding:0;box-shadow:none;margin:0;page-break-after:always}@page{size:21cm 29.7cm;margin:2cm 1.8cm}" : "body{background:#e5e7eb;padding:16px}"
     }</style></head><body>${paper.current?.innerHTML ?? ""}</body></html>`;
   const preview = useMemo(() => <RecordDocView r={r} docKey={doc} />, [r, doc]);
@@ -933,7 +933,7 @@ function DocsTab({ r, up, doc, setDoc }: { r: MeetingRecord; up: Up; doc: Record
             미리보기 문서를 클릭하면 바로 고칠 수 있습니다(인쇄·저장에만 반영되고 서버에는 저장되지 않습니다). 계속 남길 내용은 ①~④ 탭에 입력하세요. PDF는 인쇄 창에서 ‘PDF로 저장’을 고르세요.
           </p>
         </div>
-        <style>{DOC_CSS}</style>
+        <style>{DOC_CSS + RECORD_CSS}</style>
         <div className="mt-paper">
           <div key={`${doc}-${edit}-${ver.current.n}`} ref={paper} contentEditable suppressContentEditableWarning spellCheck={false}>
             {preview}

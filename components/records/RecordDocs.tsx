@@ -24,15 +24,22 @@ export const RECORD_DOCS: { key: RecordDocKey; title: (r: MeetingRecord) => stri
 const B = ({ v, w }: { v?: string; w?: number }) =>
   v ? <>{v}</> : <span className="blank" style={w ? { minWidth: `${w}mm` } : undefined}>&nbsp;</span>;
 
-/** 문서 하단 발행 명칭(제목과 같은 글자 크기) */
-const Org = ({ r, big }: { r: MeetingRecord; big?: boolean }) => (
-  <div className="center" style={{ fontSize: big ? "28pt" : "20pt", fontWeight: 700, letterSpacing: "2px", marginTop: "10mm" }}>
-    {r.associationName}
-  </div>
-);
+/** 회의관리 문서 전용 서식: 하단 발행 명칭을 모든 문서에서 같은 위치(페이지 맨 아래 가운데)에 둔다 */
+export const RECORD_CSS = `
+.mt-page.rc-page { display:flex; flex-direction:column; }
+.mt-page.rc-page > .rc-body { flex:1 0 auto; }
+.mt-page.rc-page > .rc-org { margin-top:auto; padding-top:10mm; text-align:center; font-size:20pt; font-weight:700; letter-spacing:2px; }
+@media print { .mt-page.rc-page { min-height:296mm; } }
+`;
 
-function Page({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <section className={`mt-page ${className}`}>{children}</section>;
+/** 모든 문서 공통 틀: 본문 + 맨 아래 관리단 명칭 */
+function Page({ r, children, className = "" }: { r: MeetingRecord; children: ReactNode; className?: string }) {
+  return (
+    <section className={`mt-page rc-page ${className}`}>
+      <div className="rc-body">{children}</div>
+      <div className="rc-org">{r.associationName}</div>
+    </section>
+  );
 }
 
 const agendas = (r: MeetingRecord) => r.agendas.filter((a) => a.title.trim());
@@ -52,7 +59,7 @@ function Minutes({ r }: { r: MeetingRecord }) {
   const signRows = signers.length ? signers : ["", ""];
   let n = 1;
   return (
-    <Page>
+    <Page r={r}>
       <h1>{recordTitle(r)} {minutesName(r.kind)}</h1>
       <table className="f">
         <tbody>
@@ -162,7 +169,6 @@ function Minutes({ r }: { r: MeetingRecord }) {
           </>
         )}
       </div>
-      <Org r={r} />
     </Page>
   );
 }
@@ -175,7 +181,7 @@ function Roster({ r }: { r: MeetingRecord }) {
   const at = recordAttendance(r);
   const rows = list.length ? list : Array.from({ length: asm ? 25 : 12 }, () => null);
   return (
-    <Page>
+    <Page r={r}>
       <h1>참석자 명부</h1>
       <p className="center">{r.associationName} {recordTitle(r)} / {when(r)} / {r.place}</p>
       <table className="f grid">
@@ -213,7 +219,6 @@ function Roster({ r }: { r: MeetingRecord }) {
           </tbody>
         </table>
       )}
-      <Org r={r} />
     </Page>
   );
 }
@@ -227,7 +232,7 @@ function Result({ r }: { r: MeetingRecord }) {
   const suit = d ? addMonths(d, 6) : null;
   const list = voteAgendas(r);
   return (
-    <Page className="announce">
+    <Page r={r} className="announce">
       <h1>{asm ? "관리단집회 결과 공고" : `${r.associationName} 의결사항 공고`}</h1>
       <p>
         {r.date ? fmtDate(r.date) : "　　"} {r.place}에서 개최한 {r.associationName} {recordTitle(r)}의 의결 결과를 다음과 같이 알려 드립니다.
@@ -273,7 +278,6 @@ function Result({ r }: { r: MeetingRecord }) {
       <div className="sign-area">
         <div className="date"><B v={r.resultDate ? fmtDate(r.resultDate, false) : ""} w={50} /></div>
       </div>
-      <Org r={r} big />
     </Page>
   );
 }
@@ -283,7 +287,7 @@ function FollowUpDoc({ r }: { r: MeetingRecord }) {
   const list = r.followUps.filter((f) => f.task.trim());
   const rows = list.length ? list : Array.from({ length: 10 }, () => null);
   return (
-    <Page>
+    <Page r={r}>
       <h1>의결사항 이행 점검표</h1>
       <p className="center">{r.associationName} {recordTitle(r)} ({r.date ? fmtDate(r.date, false) : "　"})</p>
       <table className="f grid">
@@ -306,7 +310,6 @@ function FollowUpDoc({ r }: { r: MeetingRecord }) {
       <div className="sign-area" style={{ textAlign: "right" }}>
         <p>점검일　　　　년　　월　　일　　점검자 <B w={30} /> <span className="stamp">(서명/인)</span></p>
       </div>
-      <Org r={r} />
     </Page>
   );
 }
@@ -315,7 +318,7 @@ function FollowUpDoc({ r }: { r: MeetingRecord }) {
 function Cover({ r }: { r: MeetingRecord }) {
   const list = r.attachments.filter((a) => a.name.trim());
   return (
-    <Page>
+    <Page r={r}>
       <h1>회의 서류 보관 표지</h1>
       <table className="f">
         <tbody>
@@ -350,7 +353,6 @@ function Cover({ r }: { r: MeetingRecord }) {
           ))}
         </tbody>
       </table>
-      <Org r={r} />
     </Page>
   );
 }
