@@ -118,7 +118,7 @@ export default function MeetingPage() {
         <div>
           <h1>총회 준비</h1>
           <p className="muted small" style={{ margin: 0 }}>
-            관리단집회(정기·임시총회) 절차 안내와 소집통지서·위임장·서면결의서·의사록 등 문서 작성
+            정기·임시총회 절차 안내와 소집통지서·위임장·서면결의서·의사록 등 문서 작성
           </p>
         </div>
         <div className="row">
@@ -340,7 +340,7 @@ function InfoTab({ m, up }: TabProps) {
       <div className="card">
         <h2>일시·장소·통지</h2>
         <div className="mt-form">
-          <F label="회계연도(표시용)" hint="예: 2026 → '2026년도 정기 관리단집회'"><input {...t("year")} /></F>
+          <F label="회계연도(표시용)" hint="예: 2026 → '2026년도 정기 총회'"><input {...t("year")} /></F>
           <F label="집회 일자"><input type="date" {...t("date")} /></F>
           <F label="시각"><input type="time" {...t("time")} /></F>
           <F label="장소" hint="건물 내 회의실 등 구체적으로"><input {...t("place")} /></F>

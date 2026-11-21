@@ -318,7 +318,7 @@ function Written({ m, owner }: { m: Meeting; owner?: Owner }) {
           <tr><th>전유면적</th><td><V v={owner?.area ? `${owner.area}㎡` : ""} w={30} /></td><th>연락처</th><td><V v={owner?.phone} w={40} /></td></tr>
         </tbody>
       </table>
-      <p>본인은 위 관리단집회에 참석하지 못하므로 아래 안건에 대하여 다음과 같이 의결권을 행사합니다.</p>
+      <p>본인은 위 총회에 참석하지 못하므로 아래 안건에 대하여 다음과 같이 의결권을 행사합니다.</p>
       <table className="f grid">
         <thead>
           <tr><th style={{ width: "20mm" }}>의안</th><th>안건명</th><th style={{ width: "18mm" }}>찬성</th><th style={{ width: "18mm" }}>반대</th></tr>
@@ -353,7 +353,7 @@ function Request({ m }: { m: Meeting }) {
   const need = t.heads ? Math.ceil(t.heads / 5) : 0;
   return (
     <Page org={orgName(m)}>
-      <h1>{consent ? "관리단집회 소집 동의서" : "관리단집회 소집 청구서"}</h1>
+      <h1>{consent ? "총회 소집 동의서" : "총회 소집 청구서"}</h1>
       {!consent && (
         <p className="to">
           수신: {m.associationName} 관리인 <B v={m.managerName} w={30} /> 귀하
@@ -399,7 +399,7 @@ function Rep({ m, owner }: { m: Meeting; owner?: Owner }) {
     <Page org={orgName(m)}>
       <h1>공유자 대표자 지정서</h1>
       <p>
-        아래 전유부분의 공유자들은 「집합건물의 소유 및 관리에 관한 법률」 제37조 제2항에 따라 {m.associationName}의 관리단집회에서 의결권을 행사할 자(통지를 받을 자)로
+        아래 전유부분의 공유자들은 「집합건물의 소유 및 관리에 관한 법률」 제37조 제2항에 따라 {m.associationName}의 총회에서 의결권을 행사할 자(통지를 받을 자)로
         아래 대표자 1인을 지정합니다.
       </p>
       <table className="f">
@@ -407,7 +407,7 @@ function Rep({ m, owner }: { m: Meeting; owner?: Owner }) {
           <tr><th>건 물</th><td>{m.buildingName} {m.buildingAddress}</td></tr>
           <tr><th>호 실</th><td><B v={owner?.unit ? `${owner.unit}호` : ""} w={30} /> (전유면적 <B v={owner?.area} w={20} />㎡)</td></tr>
           <tr><th>지정 대표자</th><td>성명 <B w={35} /> 연락처 <B w={40} /></td></tr>
-          <tr><th>적용 범위</th><td>{meetingTitle(m)} 및 이후 관리단집회 일체 (변경 시 서면으로 다시 통지)</td></tr>
+          <tr><th>적용 범위</th><td>{meetingTitle(m)} 및 이후 총회 일체 (변경 시 서면으로 다시 통지)</td></tr>
         </tbody>
       </table>
       <h3>공유자 명단</h3>
@@ -549,7 +549,7 @@ function Result({ m }: { m: Meeting }) {
   const suit = cancelSuitDeadline(m);
   return (
     <Page className="announce" org={orgName(m)}>
-      <h1>관리단집회 결과 공고</h1>
+      <h1>총회 결과 공고</h1>
       <p>
         {m.date ? fmtDate(m.date) : "　　"} {m.place}에서 개최한 {m.associationName} {meetingTitle(m)}의 결의 결과를 다음과 같이 알려 드립니다.
       </p>
