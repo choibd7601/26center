@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import {
   ATTEND_LABEL,
+  KIND_LABEL,
   RESOLUTION,
   agendaNo,
   attendance,
@@ -157,7 +158,7 @@ function Notice({ m, owner }: { m: Meeting; owner?: Owner }) {
 function Announce({ m }: { m: Meeting }) {
   return (
     <Page className="announce convene">
-      <h1>관리단집회 소집 공고</h1>
+      <h1>{KIND_LABEL[m.kind]} 소집 공고</h1>
       <p className="big center" style={{ marginBottom: "8mm" }}>
         {m.year ? `${m.year}년도 ` : ""}{m.kind === "regular" ? "정기" : "임시"} 총회를 아래와 같이 개최하오니 소유주 여러분의 많은 참석 바랍니다.
       </p>
